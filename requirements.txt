@@ -1,0 +1,29 @@
+# Core Dependencies
+google-generativeai>=0.3.0
+vertexai>=1.40.0
+firebase-admin>=6.2.0
+streamlit>=1.28.0
+pandas>=2.0.0
+numpy>=1.24.0
+python-dotenv>=1.0.0
+
+# Agent Development Kit
+# adk-python (install from GitHub if needed)
+
+# PDF Processing
+PyPDF2>=3.0.0
+python-pptx>=0.6.21
+
+# Web & API
+requests>=2.31.0
+httpx>=0.25.0
+
+# Testing & Development
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+flake8>=6.0.0
+
+# Logging & Monitoring
+loguru>=0.7.0
+python-json-logger>=2.0.7
