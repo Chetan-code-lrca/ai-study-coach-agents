@@ -304,7 +304,7 @@ def main():
 
     elif 'Quiz' in page:
         st.header("🎯 Interactive Quiz Generator")
-                st.markdown("Test your knowledge with AI-generated quizzes powered by Google Gemini.")
+            st.markdown("Test your knowledge with AI-generated quizzes powered by Google Gemini.")
         
                     # Initialize session state for quiz
             if 'quiz_data' not in st.session_state:
