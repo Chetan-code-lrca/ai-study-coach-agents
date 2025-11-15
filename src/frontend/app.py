@@ -334,8 +334,7 @@ def main():
                 if st.button("🎨 Generate Quiz", type="primary"):
                     if quiz_topic:
                         with st.spinner("Generating quiz questions using Gemini AI..."):
-                                                st.session_state.quiz_data = generate_quiz_with_gemini(quiz_topic, difficulty, num_questions)th_gemini(quiz_topic, difficulty, num_questions)
-                            
+                                    st.session_state.quiz_data = generate_quiz_with_gemini(quiz_topic, difficulty, num_questions)                            
                                             if st.session_state.quiz_data:        st.success("✅ Quiz generated!")
                             st.markdown(f"***Difficulty:** {st.session_state.quiz_data.get('difficulty', difficulty)}*")                        
                                 # Display quiz questions
