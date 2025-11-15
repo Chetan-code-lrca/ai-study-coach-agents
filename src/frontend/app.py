@@ -303,48 +303,48 @@ def main():
         st.balloons()
 
     elif 'Quiz' in page:
-st.header("🎯 Interactive Quiz Generator")
-        st.markdown("Test your knowledge with AI-generated quizzes powered by Google Gemini.")
-
-            # Initialize session state for quiz
-    if 'quiz_data' not in st.session_state:
-        st.session_state.quiz_data = None
-    if 'user_answers' not in st.session_state:
-        st.session_state.user_answers = {}
+        st.header("🎯 Interactive Quiz Generator")
+                st.markdown("Test your knowledge with AI-generated quizzes powered by Google Gemini.")
         
-        col1, col2 = st.columns(2)
-        with col1:
-            quiz_topic = st.text_input(
-                "Quiz Topic",
-                placeholder="E.g., Newton's Laws of Motion"
-            )
-            difficulty = st.select_slider(
-                "Difficulty",
-                options=["Easy", "Medium", "Hard"]
-            )
-        
-        with col2:
-            num_questions = st.number_input(
-                "Number of Questions",
-                min_value=3,
-                max_value=20,
-                value=5
-            )
-        
-        if st.button("🎨 Generate Quiz", type="primary"):
-            if quiz_topic:
-                with st.spinner("Generating quiz questions using Gemini AI..."):
-                                        st.session_state.quiz_data = generate_quiz_with_gemini(quiz_topic, difficulty, num_questions)th_gemini(quiz_topic, difficulty, num_questions)
-                    
-                                    if st.session_state.quiz_data:        st.success("✅ Quiz generated!")
-                    st.markdown(f"***Difficulty:** {st.session_state.quiz_data.get('difficulty', difficulty)}*")                        
-                        # Display quiz questions
-                        if 'questions' in st.session_state.quiz_data:
-                            for i, q in enumerate(st.session_state.quiz_data['questions']):
-                                st.markdown(f"#### Question {i+1}: {q.get('question', 'N/A')}")
-                                
-                                # Display options
-                                options_dict = q.get('options', {})
+                    # Initialize session state for quiz
+            if 'quiz_data' not in st.session_state:
+                st.session_state.quiz_data = None
+            if 'user_answers' not in st.session_state:
+                st.session_state.user_answers = {}
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    quiz_topic = st.text_input(
+                        "Quiz Topic",
+                        placeholder="E.g., Newton's Laws of Motion"
+                    )
+                    difficulty = st.select_slider(
+                        "Difficulty",
+                        options=["Easy", "Medium", "Hard"]
+                    )
+                
+                with col2:
+                    num_questions = st.number_input(
+                        "Number of Questions",
+                        min_value=3,
+                        max_value=20,
+                        value=5
+                    )
+                
+                if st.button("🎨 Generate Quiz", type="primary"):
+                    if quiz_topic:
+                        with st.spinner("Generating quiz questions using Gemini AI..."):
+                                                st.session_state.quiz_data = generate_quiz_with_gemini(quiz_topic, difficulty, num_questions)th_gemini(quiz_topic, difficulty, num_questions)
+                            
+                                            if st.session_state.quiz_data:        st.success("✅ Quiz generated!")
+                            st.markdown(f"***Difficulty:** {st.session_state.quiz_data.get('difficulty', difficulty)}*")                        
+                                # Display quiz questions
+                                if 'questions' in st.session_state.quiz_data:
+                                    for i, q in enumerate(st.session_state.quiz_data['questions']):
+                                        st.markdown(f"#### Question {i+1}: {q.get('question', 'N/A')}")
+                                        
+                                        # Display options
+                                        options_dict = q.get('options', {})
                                 user_answer = st.radio(
                                     f"Select your answer for Q{i+1}:",
                                     list(options_dict.keys()),
@@ -364,10 +364,10 @@ st.header("🎯 Interactive Quiz Generator")
                                     st.info(f"**Explanation:** {q.get('explanation', 'N/A')}")
                                 
                                 st.markdown("---")
-                        else:
-                            st.warning("No questions generated. Please try again.")
-            else:
-                st.warning("⚠️ Please enter a quiz topic.")
+                                else:
+                                    st.warning("No questions generated. Please try again.")
+                    else:
+                        st.warning("⚠️ Please enter a quiz topic.")
     
     elif 'Progress' in page:
         st.header("📊 Progress Analytics")
