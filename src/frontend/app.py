@@ -302,9 +302,9 @@ def main():
                 })
         
         st.balloons()
-    
-    306
-        st.header("🎯 Interactive Quiz Generator")
+
+        elif 'Quiz' in page:
+st.header("🎯 Interactive Quiz Generator")
         st.markdown("Test your knowledge with AI-generated quizzes powered by Google Gemini.")
 
             # Initialize session state for quiz
