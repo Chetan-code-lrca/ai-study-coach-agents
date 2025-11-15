@@ -1,6 +1,6 @@
 # 🎓 AI Study Coach - Multi-Agent System for Rural STEM Education
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: CC-BY-SA 4.0](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
 > **Kaggle Agents Intensive - Capstone Project**  
@@ -17,6 +17,7 @@
 - [Usage](#usage)
 - [Demo](#demo)
 - [Impact & Value](#impact--value)
+- - [Competition Compliance](#competition-compliance)
 
 ---
 
@@ -302,6 +303,80 @@ Q2. Calculate work done in isothermal process...
 
 - **Language:** Python 3.10+
 - **LLM:** Google Gemini (gemini-1.5-pro)
+## 📋 Competition Compliance
+
+This project was developed for the **Kaggle Agents Intensive Capstone Project** and adheres to all competition requirements.
+
+### License
+
+- **License Type**: Creative Commons Attribution-ShareAlike 4.0 International (CC-BY-SA 4.0)
+- **Commercial Use**: ✅ Permitted
+- **Modifications**: ✅ Allowed
+- **Distribution**: ✅ Allowed with attribution
+- **ShareAlike**: ⚠️ Derivative works must use the same license
+- **Full License**: See [LICENSE](LICENSE) file
+
+### Team Information
+
+- **Team Size**: 4 members (complies with maximum of 4)
+- **Team Members**:
+  - Chetan Inaganti
+  - Srikanth
+  - Nandhitha
+  - Sreelaxmi
+- **Institution**: Sri Padmavati Mahila Visvavidyalayam University (SPMVV), India
+- **Eligibility**: All team members are from India (not from embargoed regions)
+
+### External Tools & Accessibility
+
+All external tools used in this project are **freely accessible to all participants**:
+
+1. **Google Gemini 2.0 Flash API**
+   - Free tier available
+   - Access: https://ai.google.dev/
+   - No cost for development and testing
+
+2. **Streamlit**
+   - Open-source framework
+   - Free hosting on Streamlit Community Cloud
+   - Access: https://streamlit.io/
+
+3. **Firebase**
+   - Free Spark plan available
+   - Sufficient for development and demonstration
+   - Access: https://firebase.google.com/
+
+4. **Python & Libraries**
+   - All libraries are open-source
+   - Free to use and distribute
+   - Listed in requirements.txt
+
+### Reproducibility
+
+The project is fully reproducible:
+
+1. **Setup Instructions**: Complete step-by-step guide provided in [Setup Instructions](#setup-instructions)
+2. **Environment Configuration**: `.env.example` template included
+3. **Dependencies**: All dependencies listed in `requirements.txt`
+4. **Documentation**: Comprehensive README with architecture diagrams
+5. **Code Organization**: Clear project structure with documented code
+
+### Data & Privacy
+
+- **No Competition Data**: This project does not use any Kaggle competition-provided data
+- **External Data**: Uses only publicly accessible educational resources
+- **Privacy Compliance**: All user data is stored locally or in user's Firebase instance
+- **No Personal Data**: No collection of personally identifiable information
+
+### Submission Information
+
+- **Submission Type**: Hackathon (single submission per team)
+- **Approach**: Multi-agent system using Google ADK concepts
+- **Innovation**: Combines sequential and parallel agents for personalized education
+- **Target**: Rural STEM education in India
+
+---
+
 - **Backend:** Firebase (Firestore, Auth)
 - **Frontend:** Streamlit
 - **PDF Processing:** PyPDF2, python-pptx
