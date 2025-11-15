@@ -303,9 +303,15 @@ def main():
         
         st.balloons()
     
-    elif 'Quiz' in page:
+    306
         st.header("🎯 Interactive Quiz Generator")
         st.markdown("Test your knowledge with AI-generated quizzes powered by Google Gemini.")
+
+            # Initialize session state for quiz
+    if 'quiz_data' not in st.session_state:
+        st.session_state.quiz_data = None
+    if 'user_answers' not in st.session_state:
+        st.session_state.user_answers = {}
         
         col1, col2 = st.columns(2)
         with col1:
@@ -329,16 +335,13 @@ def main():
         if st.button("🎨 Generate Quiz", type="primary"):
             if quiz_topic:
                 with st.spinner("Generating quiz questions using Gemini AI..."):
-                    quiz_data = generate_quiz_with_gemini(quiz_topic, difficulty, num_questions)
+                                        st.session_state.quiz_data = generate_quiz_with_gemini(quiz_topic, difficulty, num_questions)th_gemini(quiz_topic, difficulty, num_questions)
                     
-                    if quiz_data:
-                        st.success("✅ Quiz generated!")
-                        st.markdown(f"### {quiz_data.get('quiz_title', 'Quiz')}")
-                        st.markdown(f"**Difficulty:** {quiz_data.get('difficulty', difficulty)}")
-                        
+                                    if st.session_state.quiz_data:        st.success("✅ Quiz generated!")
+                    st.markdown(f"***Difficulty:** {st.session_state.quiz_data.get('difficulty', difficulty)}*")                        
                         # Display quiz questions
-                        if 'questions' in quiz_data:
-                            for i, q in enumerate(quiz_data['questions']):
+                        if 'questions' in st.session_state.quiz_data:
+                            for i, q in enumerate(st.session_state.quiz_data['questions']):
                                 st.markdown(f"#### Question {i+1}: {q.get('question', 'N/A')}")
                                 
                                 # Display options
@@ -349,6 +352,7 @@ def main():
                                     format_func=lambda x: f"{x}) {options_dict.get(x, 'N/A')}",
                                     key=f"q_{i}"
                                 )
+                                                                st.session_state.user_answers[i] = user_answer
                                 
                                 # Show answer button
                                 if st.button(f"Show Answer & Explanation", key=f"show_{i}"):
