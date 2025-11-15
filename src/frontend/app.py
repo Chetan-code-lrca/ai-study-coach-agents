@@ -234,11 +234,10 @@ def main():
         """)
     
     # Main content area
-    if page == "📚 Study Plan":
+    if  'Study' in page:
         st.header("📚 Personalized Study Plan Generator")
         st.markdown("Get a customized study plan based on your learning goals and available time.")
         
-        col1, col2 = st.columns(2)
         with col1:
             topic = st.selectbox(
                 "Select Topic",
