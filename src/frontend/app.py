@@ -1,10 +1,16 @@
-"""Streamlit Frontend for AI Study Coach - Standalone Version.
+"""Streamlit Frontend for AI Study Coach - With Gemini Quiz Generation.
 
 Interactive web interface for students to access the AI study coach system.
 """
-
 import streamlit as st
 import os
+import json
+import google.generativeai as genai
+
+# Configure Gemini API
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+if GOOGLE_API_KEY:
+    genai.configure(api_key=GOOGLE_API_KEY)
 
 # Page configuration
 st.set_page_config(
@@ -37,14 +43,79 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
 def init_session_state():
     """Initialize Streamlit session state."""
     if 'user_id' not in st.session_state:
         st.session_state.user_id = "student_demo"
+    if 'study_history' not in st.session_state:
         st.session_state.study_history = []
+    if 'quiz_results' not in st.session_state:
         st.session_state.quiz_results = []
 
+def generate_quiz_with_gemini(topic, difficulty, num_questions):
+    """Generate quiz using Google Gemini API."""
+    try:
+        if not GOOGLE_API_KEY:
+            st.error("⚠️ Google API Key not configured. Please set GOOGLE_API_KEY in Streamlit secrets.")
+            return None
+        
+        # Create prompt for quiz generation
+        prompt = f"""
+You are an expert educator creating a quiz for students studying in rural areas with limited resources.
+
+Generate a {difficulty} difficulty quiz about: {topic}
+
+Requirements:
+- Create exactly {num_questions} multiple-choice questions
+- Each question should have 4 options (A, B, C, D)
+- Mark the correct answer
+- Include a brief explanation for each answer
+- Make questions practical and relevant to rural students
+- Focus on conceptual understanding
+
+Return ONLY a valid JSON object in this exact format:
+{{
+    "quiz_title": "{topic} Quiz",
+    "difficulty": "{difficulty}",
+    "questions": [
+        {{
+            "question": "Question text here?",
+            "options": {{
+                "A": "Option A text",
+                "B": "Option B text",
+                "C": "Option C text",
+                "D": "Option D text"
+            }},
+            "correct_answer": "A",
+            "explanation": "Explanation why A is correct"
+        }}
+    ]
+}}
+"""
+        
+        # Generate content using Gemini
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt)
+        
+        # Parse JSON response
+        response_text = response.text.strip()
+        # Remove markdown code blocks if present
+        if response_text.startswith('```'):
+            response_text = response_text.split('```')[1]
+            if response_text.startswith('json'):
+                response_text = response_text[4:]
+        response_text = response_text.strip()
+        
+        quiz_data = json.loads(response_text)
+        return quiz_data
+        
+    except json.JSONDecodeError as e:
+        st.error(f"Error parsing quiz data: {e}")
+        st.error(f"Raw response: {response_text[:500]}")
+        return None
+    except Exception as e:
+        st.error(f"Error generating quiz: {str(e)}")
+        return None
 
 def main():
     """Main application entry point."""
@@ -57,36 +128,31 @@ def main():
     
     # Sidebar
     with st.sidebar:
-        st.title("🎯 Navigation")
+        st.title("🧭 Navigation")
         page = st.radio(
             "Choose a feature:",
-            ["📚 Study Plan", "✏️ Quiz Generator", "📊 Progress Analytics", "🔍 Resource Finder"]
+            ["📚 Study Plan", "🎯 Quiz Generator", "📊 Progress Analytics", "🔍 Resource Finder"]
         )
         
         st.markdown("---")
-        st.markdown("### About This Project")
+        st.markdown("### 🔧 About This Project")
         st.info(
             "This AI Study Coach uses multiple specialized agents powered by Google Gemini "
             "to provide personalized STEM education support for rural students."
         )
         
-        st.markdown("### 🛠️ Technology")
+        st.markdown("### 🎯 Technology")
         st.markdown("""
         - Google Gemini 2.0
         - Multi-Agent System
         - Firebase Backend
-        - Python + Streamlit
+        - Streamlit Frontend
         """)
-        
-        st.markdown("---")
-        st.markdown("### 📂 Links")
-        st.markdown("[GitHub Repository](https://github.com/Chetan-code-lrca/ai-study-coach-agents)")
-        st.markdown("[Documentation](https://chetan-code-lrca.github.io/ai-study-coach-agents/)")
     
-    # Main content based on selected page
-    if "Study Plan" in page:
+    # Main content area
+    if page == "📚 Study Plan":
         st.header("📚 Personalized Study Plan Generator")
-        st.markdown("Generate a customized study plan tailored to your learning needs.")
+        st.markdown("Get a customized study plan based on your learning goals and available time.")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -111,14 +177,14 @@ def main():
                 placeholder="E.g., Prepare for exams, understand core concepts..."
             )
         
-        if st.button("🎯 Generate Study Plan", type="primary"):
+        if st.button("📝 Generate Study Plan", type="primary"):
             with st.spinner("Creating your personalized study plan..."):
                 st.success("✅ Study plan generated successfully!")
                 st.markdown("### Your Personalized Study Plan")
                 
                 # Mock study plan
                 st.markdown(f"""
-                #### {topic} Study Plan - {duration} Weeks ({level} Level)
+                ### {topic} Study Plan - {duration} Weeks ({level} Level)
                 
                 **Week 1-{min(2, duration)}**: Foundation Building
                 - Review fundamental concepts (30 min/day)
@@ -139,9 +205,9 @@ def main():
                 
                 **Resources**:
                 - 📚 Recommended textbooks
-                - 🎥 Video tutorials
-                - 📝 Practice worksheets
-                - 💬 Study groups
+                - 📺 Video tutorials
+                - 📄 Practice worksheets
+                - 🎓 Study groups
                 """)
                 
                 # Save to history
@@ -150,12 +216,12 @@ def main():
                     "duration": duration,
                     "level": level
                 })
-                
-                st.balloons()
+        
+        st.balloons()
     
-    elif "Quiz" in page:
-        st.header("✏️ Interactive Quiz Generator")
-        st.markdown("Test your knowledge with AI-generated quizzes.")
+    elif 'Quiz' in page:
+        st.header("🎯 Interactive Quiz Generator")
+        st.markdown("Test your knowledge with AI-generated quizzes powered by Google Gemini.")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -176,145 +242,108 @@ def main():
                 value=5
             )
         
-        if st.button("🎲 Generate Quiz", type="primary"):
+        if st.button("🎨 Generate Quiz", type="primary"):
             if quiz_topic:
-                with st.spinner("Generating quiz questions..."):
-                    st.success("✅ Quiz generated!")
-                    st.markdown("### Your Quiz")
+                with st.spinner("Generating quiz questions using Gemini AI..."):
+                    quiz_data = generate_quiz_with_gemini(quiz_topic, difficulty, num_questions)
                     
-                    # Mock quiz
-                    for i in range(min(num_questions, 5)):
-                        st.markdown(f"""\n**Question {i+1}**: What is a key concept in {quiz_topic}?
+                    if quiz_data:
+                        st.success("✅ Quiz generated!")
+                        st.markdown(f"### {quiz_data.get('quiz_title', 'Quiz')}")
+                        st.markdown(f"**Difficulty:** {quiz_data.get('difficulty', difficulty)}")
                         
-A) Option A  
-B) Option B  
-C) Option C  
-D) Option D
-                        """)
-                        st.radio(f"Your answer for Q{i+1}:", ["A", "B", "C", "D"], key=f"q{i}")
-                    
-                    if st.button("Submit Quiz"):
-                        score = 80  # Mock score
-                        st.session_state.quiz_results.append({
-                            "topic": quiz_topic,
-                            "score": score,
-                            "difficulty": difficulty
-                        })
-                        st.success(f"🎉 Your Score: {score}%")
+                        # Display quiz questions
+                        if 'questions' in quiz_data:
+                            for i, q in enumerate(quiz_data['questions']):
+                                st.markdown(f"#### Question {i+1}: {q.get('question', 'N/A')}")
+                                
+                                # Display options
+                                options_dict = q.get('options', {})
+                                user_answer = st.radio(
+                                    f"Select your answer for Q{i+1}:",
+                                    list(options_dict.keys()),
+                                    format_func=lambda x: f"{x}) {options_dict.get(x, 'N/A')}",
+                                    key=f"q_{i}"
+                                )
+                                
+                                # Show answer button
+                                if st.button(f"Show Answer & Explanation", key=f"show_{i}"):
+                                    correct = q.get('correct_answer', 'A')
+                                    if user_answer == correct:
+                                        st.success(f"✅ Correct! The answer is {correct}")
+                                    else:
+                                        st.error(f"❌ Incorrect. The correct answer is {correct}")
+                                    
+                                    st.info(f"**Explanation:** {q.get('explanation', 'N/A')}")
+                                
+                                st.markdown("---")
+                        else:
+                            st.warning("No questions generated. Please try again.")
             else:
-                st.warning("Please enter a quiz topic.")
+                st.warning("⚠️ Please enter a quiz topic.")
     
-    elif "Progress" in page:
+    elif 'Progress' in page:
         st.header("📊 Progress Analytics")
         st.markdown("Track your learning journey and identify areas for improvement.")
         
-        # Display metrics
         col1, col2, col3 = st.columns(3)
-        
         with col1:
-            avg_score = 75 if st.session_state.quiz_results else 0
-            st.metric(
-                "Average Score",
-                f"{avg_score}%",
-                "+5%"
-            )
-        
+            st.metric("Study Sessions", len(st.session_state.study_history))
         with col2:
-            total_quizzes = len(st.session_state.quiz_results)
-            st.metric(
-                "Total Quizzes",
-                total_quizzes
-            )
-        
+            st.metric("Quizzes Taken", len(st.session_state.quiz_results))
         with col3:
-            total_plans = len(st.session_state.study_history)
-            st.metric(
-                "Study Plans Created",
-                total_plans
-            )
+            st.metric("Topics Covered", len(set([h['topic'] for h in st.session_state.study_history])))
         
-        # Insights
-        st.markdown("### 💡 Insights")
-        if st.session_state.quiz_results or st.session_state.study_history:
-            st.info("✓ Great progress! Keep up the consistent study habits.")
-            st.info("✓ Your performance is improving over time.")
-            st.info("✓ Consider focusing more time on challenging topics.")
-        else:
-            st.warning("Start taking quizzes and creating study plans to see your progress!")
-        
-        # Show study history
+        st.markdown("### 📈 Recent Activity")
         if st.session_state.study_history:
-            st.markdown("### 📚 Recent Study Plans")
-            for idx, session in enumerate(st.session_state.study_history[-5:]):
-                st.markdown(f"{idx+1}. {session['topic']} ({session['duration']} weeks, {session['level']} level)")
+            for i, session in enumerate(st.session_state.study_history[-5:]):
+                st.markdown(f"**Session {i+1}:** {session['topic']} - {session['level']} ({session['duration']} weeks)")
+        else:
+            st.info("No study sessions yet. Create your first study plan!")
         
-        # Quiz history
-        if st.session_state.quiz_results:
-            st.markdown("### ✏️ Recent Quiz Results")
-            for idx, quiz in enumerate(st.session_state.quiz_results[-5:]):
-                st.markdown(f"{idx+1}. {quiz['topic']} - Score: {quiz['score']}% ({quiz['difficulty']})")
+        st.markdown("### 🎯 Learning Recommendations")
+        st.markdown("""
+        Based on your progress:
+        - ✅ Great consistency! Keep it up
+        - 📚 Try exploring more advanced topics
+        - 🎯 Consider taking quizzes to test your knowledge
+        - 👥 Join study groups for collaborative learning
+        """)
     
-    else:  # Resource Finder
-        st.header("🔍 Learning Resource Finder")
-        st.markdown("Discover curated educational resources from across the web.")
+    elif 'Resource' in page:
+        st.header("🔍 Smart Resource Finder")
+        st.markdown("Discover educational resources tailored to rural students' needs.")
         
-        col1, col2 = st.columns(2)
-        with col1:
-            resource_topic = st.text_input(
-                "What do you want to learn?",
-                placeholder="E.g., Quantum Physics"
-            )
+        search_query = st.text_input(
+            "What are you looking for?",
+            placeholder="E.g., Free physics textbooks, online chemistry labs"
+        )
         
-        with col2:
-            resource_types = st.multiselect(
-                "Resource Types",
-                ["Videos", "Articles", "Practice", "Interactive"],
-                default=["Videos", "Articles"]
-            )
+        resource_type = st.multiselect(
+            "Resource Type",
+            ["Textbooks", "Video Tutorials", "Practice Problems", "Study Groups", "Online Courses"]
+        )
         
-        if st.button("🔎 Find Resources", type="primary"):
-            if resource_topic:
-                with st.spinner("Searching for resources..."):
-                    st.success("✅ Found educational resources!")
-                    st.markdown("### Recommended Resources")
-                    
-                    if "Videos" in resource_types:
-                        st.markdown("#### 📺 Video Resources")
-                        st.markdown(f"- [Khan Academy: Introduction to {resource_topic}](https://khanacademy.org)")
-                        st.markdown(f"- [YouTube: {resource_topic} Explained](https://youtube.com)")
-                        st.markdown(f"- [Crash Course: {resource_topic}](https://youtube.com/crashcourse)")
-                    
-                    if "Articles" in resource_types:
-                        st.markdown("#### 📄 Article Resources")
-                        st.markdown(f"- Complete Guide to {resource_topic}")
-                        st.markdown(f"- Step-by-Step Tutorial: {resource_topic}")
-                        st.markdown(f"- {resource_topic}: Beginner to Advanced")
-                    
-                    if "Practice" in resource_types:
-                        st.markdown("#### ✍️ Practice Resources")
-                        st.markdown(f"- {resource_topic} Practice Problems")
-                        st.markdown(f"- Interactive Exercises for {resource_topic}")
-                        st.markdown(f"- {resource_topic} Worksheets")
-                    
-                    if "Interactive" in resource_types:
-                        st.markdown("#### 🎮 Interactive Resources")
-                        st.markdown(f"- {resource_topic} Simulator")
-                        st.markdown(f"- Interactive {resource_topic} Lab")
-                        st.markdown(f"- {resource_topic} Visualization Tools")
-            else:
-                st.warning("Please enter a topic to search.")
-    
-    # Footer
-    st.markdown("---")
-    st.markdown(
-        "<div style='text-align: center'>"  
-        "<p>🏆 Kaggle Agents Intensive Capstone Project | Track: Agents for Good</p>"
-        "<p>Powered by Google Gemini 2.0 | Built by Chetan</p>"
-        "<p><a href='https://github.com/Chetan-code-lrca/ai-study-coach-agents'>View on GitHub</a></p>"
-        "</div>",
-        unsafe_allow_html=True
-    )
-
+        if st.button("🔍 Find Resources", type="primary"):
+            with st.spinner("Searching for resources..."):
+                st.success("✅ Found relevant resources!")
+                
+                st.markdown("### 📚 Recommended Resources")
+                
+                resources = [
+                    {"title": "Khan Academy", "type": "Video Tutorials", "url": "https://khanacademy.org", "desc": "Free world-class education"},
+                    {"title": "NCERT Books", "type": "Textbooks", "url": "https://ncert.nic.in", "desc": "Official textbooks"},
+                    {"title": "PhET Simulations", "type": "Online Labs", "url": "https://phet.colorado.edu", "desc": "Interactive science simulations"},
+                    {"title": "Coursera", "type": "Online Courses", "url": "https://coursera.org", "desc": "University courses online"}
+                ]
+                
+                for resource in resources:
+                    st.markdown(f"""
+                    **{resource['title']}** ({resource['type']})
+                    - {resource['desc']}
+                    - [Visit Resource]({resource['url']})
+                    ---
+                    """)
 
 if __name__ == "__main__":
     main()
