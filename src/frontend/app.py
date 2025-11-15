@@ -94,7 +94,7 @@ Return ONLY a valid JSON object in this exact format:
 """
         
         # Generate content using Gemini
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash-002')
         response = model.generate_content(prompt)
         
         # Parse JSON response
