@@ -302,7 +302,7 @@ def main():
         
         st.balloons()
 
-        elif 'Quiz' in page:
+    elif 'Quiz' in page:
 st.header("🎯 Interactive Quiz Generator")
         st.markdown("Test your knowledge with AI-generated quizzes powered by Google Gemini.")
 
