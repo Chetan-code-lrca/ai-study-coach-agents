@@ -9,7 +9,7 @@
 
 > **Kaggle Agents Intensive - Capstone Project**  
 > **Track:** Agents for Good  
-> **Team:** Chetan, Srikanth, Nandhitha, Sreelaxmi
+> **Team:** Chetan
 
 ---
 
