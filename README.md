@@ -13,7 +13,24 @@
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start & Deployment
+
+### Option 1: Streamlit Community Cloud (Recommended - FREE)
+
+**Easiest way to deploy for the competition!**
+
+1. **Fork this repository** to your GitHub account
+2. Go to [share.streamlit.io](https://share.streamlit.io)
+3. Click "New app" and connect your GitHub
+4. Select this repository and `src/main.py` as the main file
+5. Add your `GOOGLE_API_KEY` in Secrets (Advanced settings)
+6. Click Deploy!
+
+**✨ Your app will be live at:** `https://your-app-name.streamlit.app`
+
+---
+
+### Option 2: Local Development
 
 ```bash
 # 1. Clone the repository
@@ -31,8 +48,24 @@ cp .env.example .env
 streamlit run src/main.py
 ```
 
-**🎯 Try it now:** The app will open in your browser at `http://localhost:8501`
+**🎯 Local URL:** The app will open at `http://localhost:8501`
 
+---
+
+### Option 3: Other Cloud Platforms
+
+**Render (Free tier available)**
+- Connect GitHub repo
+- Build command: `pip install -r requirements.txt`
+- Start command: `streamlit run src/main.py --server.port $PORT`
+
+**Railway (Free tier available)**
+- One-click deploy from GitHub
+- Automatically detects Streamlit
+
+**Google Cloud Run (Pay-as-you-go)**
+- Serverless container deployment
+- Auto-scaling with low cost
 ---
 
 ## ✨ Key Highlights
