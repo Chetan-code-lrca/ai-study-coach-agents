@@ -66,6 +66,35 @@ st.set_page_config(page_title="🎓 AI Study Coach", page_icon="🎓", layout="w
 st.title("🎓 AI Study Coach - Multi-Agent System")
 st.markdown("### Intelligent Study Planning for Rural STEM Education")
 
+# Custom CSS for professional appearance
+st.markdown("""
+<style>
+    .main > div {
+        padding-top: 2rem;
+    }
+    .stButton>button {
+        width: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        transition: transform 0.2s;
+    }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    h1 {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Sidebar for student information
 with st.sidebar:
     st.header("Student Profile")
@@ -77,13 +106,12 @@ with st.sidebar:
         default=["Mathematics", "Physics"]
     )
     
-    api_key = st.text_input("Google API Key", type="password", 
-                            value=os.getenv("GOOGLE_API_KEY", ""))
+    
+    # Get API key from environment variable (configured in Streamlit secrets)
+    api_key = os.getenv("GOOGLE_API_KEY", "")
     
     if st.button("🚀 Start Study Session", use_container_width=True):
-        if not api_key:
-            st.error("Please provide a Google API Key")
-        elif not subjects:
+        if not subjects:
             st.error("Please select at least one subject")
         else:
             st.session_state.run_session = True
