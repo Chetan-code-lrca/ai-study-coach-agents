@@ -137,7 +137,7 @@ class AgentOrchestrator:
         # Analyze the quiz results
     total_questions = len(quiz.get('questions', []))
         
-    prompt = f\"\"\"
+    prompt = f"""
         You are a progress tracking agent for a grade {student.grade} student named {student.name}.
         Subjects: {', '.join(student.subjects)}
         
