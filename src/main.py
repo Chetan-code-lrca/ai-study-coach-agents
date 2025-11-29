@@ -135,7 +135,7 @@ class AgentOrchestrator:
     async def progress_tracker_agent(self, student: StudentProfile, quiz: dict):
                 """AI-powered progress tracking agent using Gemini"""
         # Analyze the quiz results
-        total_questions = len(quiz.get('questions', []))
+    total_questions = len(quiz.get('questions', []))
         
         prompt = f"""
         You are a progress tracking agent for a grade {student.grade} student named {student.name}.
