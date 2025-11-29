@@ -28,7 +28,7 @@ class AgentOrchestrator:
         self.api_key = gemini_api_key
         self.sessions = {}  # Session management
         logger.info("Orchestrator initialized")
-                genai.configure(api_key=gemini_api_key)
+                        genai.configure(api_key=gemini_api_key)
         self.model = genai.GenerativeModel('gemini-pro')
     
     async def run_study_session(self, student: StudentProfile):
