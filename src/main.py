@@ -152,10 +152,10 @@ class AgentOrchestrator:
         
         Be encouraging and constructive. Format as clear sections.
         """
-        try:
+    try:
             response = self.model.generate_content(prompt)
             return {"score": 85, "analysis": response.text}
-        except Exception as e:
+    except Exception as e:
             logger.error(f"Progress tracker error: {str(e)}")
             return {"score": 85, "analysis": f"Great effort, {student.name}! Keep practicing your {', '.join(student.subjects)} regularly."}
 
