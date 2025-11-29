@@ -49,7 +49,6 @@ class AgentOrchestrator:
         return {"plan": plan, "quiz": quiz, "resources": results[0]}
     
     async def study_planner_agent(self, student: StudentProfile):
-    async def study_planner_agent(self, student: StudentProfile):
         """AI-powered study planning agent using Gemini"""
         prompt = f"""
         Create a detailed study plan for a grade {student.grade} student named {student.name}.
