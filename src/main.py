@@ -110,7 +110,7 @@ class AgentOrchestrator:
             logger.error(f"Quiz generator error: {str(e)}")
             return {"questions": [{"question": "Sample question", "options": {"A": "Option A", "B": "Option B", "C": "Option C", "D": "Option D"}, "correct": "A", "explanation": "Sample"}]}
 
-        async def resource_agent(self, student: StudentProfile):
+    async def resource_agent(self, student: StudentProfile):
         """AI-powered resource recommendation agent using Gemini"""
         prompt = f"""
         You are an educational resource recommender for a grade {student.grade} student named {student.name}.
