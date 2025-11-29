@@ -9,8 +9,7 @@
 
 > **Kaggle Agents Intensive - Capstone Project**  
 > **Track:** Agents for Good  
-> **Team:** Chetan
-
+> **Developer:** Chetan Inaganti (Solo Project)
 ---
 
 ## 🚀 Quick Start & Deployment
@@ -401,15 +400,10 @@ This project was developed for the **Kaggle Agents Intensive Capstone Project** 
 
 ### Team Information
 
-- **Team Size**: 4 members (complies with maximum of 4)
-- **Team Members**:
-  - Chetan Inaganti
-  - Srikanth
-  - Nandhitha
-  - Sreelaxmi
+- **Team Size**: 1 (Solo developer project)
+- **Developer**: Chetan Inaganti
 - **Institution**: Sri Padmavati Mahila Visvavidyalayam University (SPMVV), India
-- **Eligibility**: All team members are from India (not from embargoed regions)
-
+- **Developer Origin**: Chetan Inaganti is from India (not from embargoed regions)
 ### External Tools & Accessibility
 
 All external tools used in this project are **freely accessible to all participants**:
@@ -490,11 +484,7 @@ Each agent is evaluated on:
 
 ## 👥 Team
 
-- **Chetan** - Architecture & Backend
-- **Srikanth** - Agent Development
-- **Nandhitha** - Frontend & UX
-- **Sreelaxmi** - Testing & Documentation
-
+- **Chetan Inaganti** - Solo Developer (Architecture, Backend, Frontend, Testing, Documentation)
 ---
 
 ## 📄 License
