@@ -27,3 +27,9 @@ flake8>=6.0.0
 # Logging & Monitoring
 loguru>=0.7.0
 python-json-logger>=2.0.7
+
+
+# Document Processing & Advanced Features
+python-docx>=0.8.11
+textract>=1.6.3
+pillow>=9.0.0
