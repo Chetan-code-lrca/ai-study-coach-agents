@@ -2,16 +2,14 @@
 
 AI Study Coach is a Python/Streamlit project for study planning, document-based learning, quizzes, progress tracking, and resource recommendations.
 
-The repository contains several agent-style modules around Google Gemini, along with a Streamlit interface. It also contains local fallbacks and prototype service code, so not every component in the repository is wired into the main screen yet.
+The repository contains several Gemini-based agent modules, a main Streamlit app, a second Streamlit frontend, local data storage, and Firebase service code.
 
-## What is in the repository
-
-The code is split into a few parts:
+## What is included
 
 ```text
 ai-study-coach-agents/
 ├── src/
-│   ├── main.py                    # Main Streamlit learning app
+│   ├── main.py
 │   ├── agents/
 │   │   ├── data_processing.py
 │   │   ├── progress_tracker.py
@@ -23,206 +21,101 @@ ai-study-coach-agents/
 │   │   ├── error_handler.py
 │   │   ├── firebase_service.py
 │   │   └── gemini_service.py
-│   └── frontend/
-│       └── app.py                 # Separate Streamlit UI with Gemini quiz features
+│   └── frontend/app.py
 ├── .devcontainer/
-│   └── devcontainer.json          # VS Code / GitHub Codespaces setup
 ├── .env.example
 ├── requirements.txt
 ├── LICENSE
 └── README.md
 ```
 
-## What you can run today
+## Run the main app
 
-There are two Streamlit entry points in the repository.
+Requirements:
 
-### `src/main.py`
-
-This is the simpler all-in-one learning interface. It has tabs for:
-
-- Study sessions
-- Document summaries
-- Flashcard generation
-- Question answering from pasted text
-- User profile data
-- Local work-session history
-
-It reads `GOOGLE_API_KEY` from the environment when Gemini features are used. It also writes local files under `.study_coach_data/` for the profile and work-session history.
-
-### `src/frontend/app.py`
-
-This is a more presentation-oriented Streamlit interface. The repository's dev-container configuration starts this file automatically on port `8501`.
-
-Use whichever interface matches what you are working on. The two files are separate applications; changing one does not automatically change the other.
-
-## Requirements
-
-Recommended for local development:
-
-- Python 3.10 or newer
+- Python 3.10+
 - Git
-- A Google Gemini API key for live generation features
+- A Google Gemini API key for live generation
 
-The checked-in development container uses Python 3.11, which is a good reference environment for this repository.
-
-## 1. Clone
+Clone and create a virtual environment:
 
 ```bash
 git clone https://github.com/Chetan-code-lrca/ai-study-coach-agents.git
 cd ai-study-coach-agents
-```
-
-## 2. Create a virtual environment
-
-### Linux / macOS
-
-```bash
 python3 -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-### Windows PowerShell
+Windows PowerShell:
 
 ```powershell
 py -3.11 -m venv .venv
 .venv\Scripts\Activate.ps1
-```
-
-Then upgrade pip:
-
-```bash
 python -m pip install --upgrade pip
-```
-
-## 3. Install the dependencies
-
-```bash
 python -m pip install -r requirements.txt
 ```
 
-The current requirements file includes Streamlit, Google Gemini support, Firebase packages, PDF/document processing, HTTP clients, testing tools, and logging utilities.
-
-One detail worth knowing: `src/services/gemini_service.py` imports `tenacity`, but `tenacity` is not currently listed in `requirements.txt`. If you use that service module directly, install it as well:
+Set the Gemini key in the process environment:
 
 ```bash
-python -m pip install tenacity
+export GOOGLE_API_KEY="your-gemini-api-key"
 ```
 
-## 4. Configure Gemini
-
-Create a local `.env` file from the example:
-
-### Linux / macOS
-
-```bash
-cp .env.example .env
-```
-
-### Windows PowerShell
+PowerShell:
 
 ```powershell
-Copy-Item .env.example .env
+$env:GOOGLE_API_KEY = "your-gemini-api-key"
 ```
 
-At minimum, set:
-
-```env
-GOOGLE_API_KEY=your_gemini_api_key
-```
-
-The current `src/main.py` reads `GOOGLE_API_KEY` directly from the process environment, so your shell must have the variable available when Streamlit starts. The `.env` file is useful as a template, but `src/main.py` does not itself call `load_dotenv()` before reading the key.
-
-For example, on Linux/macOS:
-
-```bash
-export GOOGLE_API_KEY="your_gemini_api_key"
-```
-
-On PowerShell:
-
-```powershell
-$env:GOOGLE_API_KEY = "your_gemini_api_key"
-```
-
-Do not commit a real `.env` file or service-account credentials.
-
-## 5. Run the main app
-
-From the repository root:
+Start the main application:
 
 ```bash
 streamlit run src/main.py
 ```
 
-Open the URL printed by Streamlit, normally:
+The app opens on `http://localhost:8501` by default.
 
-```text
-http://localhost:8501
-```
+## Second Streamlit interface
 
-## 6. Run the frontend app
-
-The second UI can be started with:
+A separate UI is available at `src/frontend/app.py`:
 
 ```bash
 streamlit run src/frontend/app.py
 ```
 
-It also normally uses port `8501`.
+The two Streamlit applications are separate entry points. Features added to one are not automatically available in the other.
 
-## 7. Using the agent modules directly
+## Gemini integration
 
-The `src/agents/` directory contains individual components for different parts of the workflow.
+Gemini powers the language-generation parts of the project. `src/services/gemini_service.py` also provides retries, structured-output helpers, chat support, prompt context, and a mock mode.
 
-### Study planner
+Several older agent modules use their own Gemini model configuration, so model names are not uniform across the repository.
 
-`StudyPlannerAgent` accepts a student profile and asks Gemini for a seven-day study plan. It also contains a rule-based fallback when Gemini fails.
-
-The module can be run directly after setting `GEMINI_API_KEY`:
+The shared service imports `tenacity`, so install it when working with that module:
 
 ```bash
-python src/agents/study_planner.py
+python -m pip install tenacity
 ```
 
-### Quiz generator
+## Agent modules
 
-`QuizGeneratorAgent` is intended to generate multiple-choice questions from study material. The current PDF extraction method in the module is still a prototype and returns sample content rather than performing a full PDF extraction pipeline.
+`study_planner.py` generates seven-day study plans and has a rule-based fallback.
 
-So the file is useful as an agent implementation example, but it should not be described as a finished PDF-to-quiz system yet.
+`quiz_generator.py` generates multiple-choice questions. Its current PDF extraction path is a prototype and uses sample content rather than a complete PDF ingestion pipeline.
 
-### Progress tracker
+`progress_tracker.py` contains progress-analysis logic.
 
-`progress_tracker.py` contains progress-analysis logic and a small executable test section.
+`resource_recommender.py` contains study-resource recommendation logic.
 
-### Resource recommender
+`user_interaction.py` classifies simple study-related requests.
 
-`resource_recommender.py` contains resource-search/recommendation logic and its own example/test flow.
+## Firebase
 
-### User interaction
+Firebase service code is included, but the main Streamlit application uses local files for its profile and work-session history. Firebase storage branches are not a complete production data layer yet.
 
-`user_interaction.py` classifies simple user requests into categories such as help, quiz, and other study-related actions.
-
-## How Gemini is used
-
-Gemini is the language-model layer for several agents. The repository contains two styles of integration:
-
-1. Some agents create a Gemini model directly with `google.generativeai`.
-2. `src/services/gemini_service.py` provides a shared wrapper with retries, structured-output helpers, chat support, prompt-context handling, and a mock mode when no API key is available.
-
-The shared service currently defaults to `gemini-2.0-flash-exp`, while some individual agents still use `gemini-1.5-pro` or `gemini-pro`. Those model names are part of the current source code; they are not a single project-wide model configuration.
-
-## Firebase status
-
-Firebase-related code exists in `src/services/firebase_service.py`, but the current implementation is partly a prototype. When Firebase credentials are not provided it uses in-memory storage; its production Firebase branches still contain placeholder `pass` sections.
-
-The main Streamlit application in `src/main.py` uses local files for its profile and study history instead of requiring Firebase.
-
-So you can run the main app without setting up Firebase.
-
-## Local data
-
-`src/main.py` creates:
+The main app writes:
 
 ```text
 .study_coach_data/
@@ -230,70 +123,29 @@ So you can run the main app without setting up Firebase.
 └── work_sessions.csv
 ```
 
-These files hold the local profile and study-session information used by the app.
+Logs are written under `logs/`.
 
-The application also writes logs under `logs/`.
+## Codespaces / Dev Container
 
-## Dev Container / Codespaces
-
-The repository includes `.devcontainer/devcontainer.json` with a Python 3.11 image and a post-attach command that starts:
-
-```bash
-streamlit run src/frontend/app.py --server.enableCORS false --server.enableXsrfProtection false
-```
-
-It forwards port `8501` and is set up for VS Code/GitHub Codespaces.
-
-If you use Codespaces, this gives you a ready-made environment without having to install Python manually on your machine.
+The repository includes a Python 3.11 development container configured to run `src/frontend/app.py` on port `8501`.
 
 ## Testing
 
-The repository contains executable test/demo sections inside several agent and service files. Where pytest tests are present in your checkout, use:
+Run the available Python tests with:
 
 ```bash
 python -m pytest
 ```
 
-There is not currently a single, clearly separated end-to-end test suite covering every agent, service, and Streamlit screen.
+The project does not currently have one end-to-end test suite covering every agent, service, and Streamlit screen.
 
-## Troubleshooting
+## Development status
 
-### Streamlit says the Gemini key is missing
-
-Set `GOOGLE_API_KEY` in the environment before starting Streamlit:
-
-```bash
-export GOOGLE_API_KEY="your_gemini_api_key"
-streamlit run src/main.py
-```
-
-### `ModuleNotFoundError: tenacity`
-
-Install it explicitly:
-
-```bash
-python -m pip install tenacity
-```
-
-This is needed by `src/services/gemini_service.py` with the current dependency file.
-
-### Firebase setup is blocking local development
-
-You do not need Firebase to use `src/main.py`. Its profile and work-session data use local files.
-
-### A claimed feature does not work end to end
-
-Check whether the feature is connected to the Streamlit entry point you are running. The repository contains several prototype services and agent modules, and not all of them are used by both UIs.
-
-## Development notes
-
-This repository is best treated as a working prototype and learning project around multi-agent patterns, Gemini integration, Streamlit, and study tooling.
-
-Some README claims from earlier versions of the project were stronger than the current source code supports, so the documentation above intentionally distinguishes working pieces from prototype or placeholder implementations.
+The project is a working prototype for multi-agent study tooling, Gemini integration, and Streamlit applications. Some agent and service modules are complete enough to run independently, while others are still being developed.
 
 ## License
 
-The repository is licensed under **Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**. See `LICENSE` for the full text.
+Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0). See `LICENSE` for the full terms.
 
 ## Author
 
