@@ -1,0 +1,7 @@
+[theme]
+base = "light"
+primaryColor = "#667eea"
+font = "sans serif"
+
+[server]
+headless = true
