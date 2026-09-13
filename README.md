@@ -1,43 +1,18 @@
 # AI Study Coach
 
-AI Study Coach is a Python/Streamlit project for study planning, document-based learning, quizzes, progress tracking, and resource recommendations.
+AI Study Coach is a Python/Streamlit learning platform for personalized study plans, document learning, AI-generated quizzes, progress tracking, and resource discovery.
 
-The repository contains several Gemini-based agent modules, a main Streamlit app, a second Streamlit frontend, local data storage, and Firebase service code.
+## Production Streamlit app
 
-## What is included
+The production-facing Streamlit entrypoint is:
 
 ```text
-ai-study-coach-agents/
-├── src/
-│   ├── main.py
-│   ├── agents/
-│   │   ├── data_processing.py
-│   │   ├── progress_tracker.py
-│   │   ├── quiz_generator.py
-│   │   ├── resource_recommender.py
-│   │   ├── study_planner.py
-│   │   └── user_interaction.py
-│   ├── services/
-│   │   ├── error_handler.py
-│   │   ├── firebase_service.py
-│   │   └── gemini_service.py
-│   └── frontend/app.py
-├── .devcontainer/
-├── .env.example
-├── requirements.txt
-├── LICENSE
-└── README.md
+streamlit_app.py
 ```
 
-## Run the main app
+It launches the maintained frontend at `src/frontend/app.py`.
 
-Requirements:
-
-- Python 3.10+
-- Git
-- A Google Gemini API key for live generation
-
-Clone and create a virtual environment:
+### Local run
 
 ```bash
 git clone https://github.com/Chetan-code-lrca/ai-study-coach-agents.git
@@ -46,6 +21,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+streamlit run streamlit_app.py
 ```
 
 Windows PowerShell:
@@ -55,9 +31,14 @@ py -3.11 -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+streamlit run streamlit_app.py
 ```
 
-Set the Gemini key in the process environment:
+## Gemini configuration
+
+The app uses Google's current `google-genai` Python SDK and the stable `gemini-3.8-flash` model.
+
+For local development:
 
 ```bash
 export GOOGLE_API_KEY="your-gemini-api-key"
@@ -69,79 +50,81 @@ PowerShell:
 $env:GOOGLE_API_KEY = "your-gemini-api-key"
 ```
 
-Start the main application:
+For Streamlit Community Cloud, add the same secret in the app's **Settings → Secrets**:
 
-```bash
-streamlit run src/main.py
+```toml
+GOOGLE_API_KEY = "your-gemini-api-key"
 ```
 
-The app opens on `http://localhost:8501` by default.
+The application does not store the API key in the repository.
 
-## Second Streamlit interface
+## Deploy on Streamlit Community Cloud
 
-A separate UI is available at `src/frontend/app.py`:
+1. Open Streamlit Community Cloud and sign in with GitHub.
+2. Create a new app from `Chetan-code-lrca/ai-study-coach-agents` and branch `main`.
+3. Set the main file path to `streamlit_app.py`.
+4. Add `GOOGLE_API_KEY` under the app secrets.
+5. Deploy.
 
-```bash
-streamlit run src/frontend/app.py
-```
+After deployment, pushes to `main` can be configured to trigger Streamlit Cloud redeploys automatically.
 
-The two Streamlit applications are separate entry points. Features added to one are not automatically available in the other.
+### Important
 
-## Gemini integration
+This repository is a **Streamlit/Python application**. It is not a Vite/Node application and should not be deployed as a Vercel Vite project. The previous Vercel setup tried to run `npm run build` and failed because this project has no `package.json` build entrypoint.
 
-Gemini powers the language-generation parts of the project. `src/services/gemini_service.py` also provides retries, structured-output helpers, chat support, prompt context, and a mock mode.
+## Features
 
-Several older agent modules use their own Gemini model configuration, so model names are not uniform across the repository.
+### Study Plan
+Generate a structured multi-week study plan based on subject, level, available time, and learning goals.
 
-The shared service imports `tenacity`, so install it when working with that module:
+### Document Learning
+Upload TXT, PDF, DOCX, CSV, or JSON study material, then summarize it, explain key concepts, or ask questions about it.
 
-```bash
-python -m pip install tenacity
-```
+### Quiz Generator
+Generate multiple-choice quizzes with answer keys and explanations. Quiz scores are recorded in the current Streamlit session.
 
-## Agent modules
+### Progress
+Track generated study plans, completed quizzes, and average quiz performance during the current session.
 
-`study_planner.py` generates seven-day study plans and has a rule-based fallback.
+### Profile
+Maintain a lightweight in-session student profile for personalization.
 
-`quiz_generator.py` generates multiple-choice questions. Its current PDF extraction path is a prototype and uses sample content rather than a complete PDF ingestion pipeline.
-
-`progress_tracker.py` contains progress-analysis logic.
-
-`resource_recommender.py` contains study-resource recommendation logic.
-
-`user_interaction.py` classifies simple study-related requests.
-
-## Firebase
-
-Firebase service code is included, but the main Streamlit application uses local files for its profile and work-session history. Firebase storage branches are not a complete production data layer yet.
-
-The main app writes:
+## Repository structure
 
 ```text
-.study_coach_data/
-├── user_profile.json
-└── work_sessions.csv
+ai-study-coach-agents/
+├── streamlit_app.py
+├── .streamlit/config.toml
+├── src/
+│   ├── main.py
+│   ├── agents/
+│   ├── services/
+│   └── frontend/app.py
+├── .devcontainer/
+├── requirements.txt
+├── LICENSE
+└── README.md
 ```
 
-Logs are written under `logs/`.
-
-## Codespaces / Dev Container
-
-The repository includes a Python 3.11 development container configured to run `src/frontend/app.py` on port `8501`.
+The older `src/main.py` and service/agent modules remain in the repository for development and experimentation. The production Streamlit deployment uses the maintained `streamlit_app.py` entrypoint.
 
 ## Testing
 
-Run the available Python tests with:
+The repository includes a GitHub Actions smoke check that installs the deployment dependencies and compiles the Streamlit entrypoint:
 
 ```bash
-python -m pytest
+python -m py_compile streamlit_app.py src/frontend/app.py
 ```
 
-The project does not currently have one end-to-end test suite covering every agent, service, and Streamlit screen.
+Run it locally with:
+
+```bash
+python -m py_compile streamlit_app.py src/frontend/app.py
+```
 
 ## Development status
 
-The project is a working prototype for multi-agent study tooling, Gemini integration, and Streamlit applications. Some agent and service modules are complete enough to run independently, while others are still being developed.
+The Streamlit frontend is a deployable prototype. Persistent cross-user profile/history storage and the Firebase data layer are not part of the current deployment architecture.
 
 ## License
 
