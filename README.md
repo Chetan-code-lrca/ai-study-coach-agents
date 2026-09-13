@@ -1,27 +1,49 @@
 # AI Study Coach
 
-AI Study Coach is a Python/Streamlit learning platform for personalized study plans, document learning, AI-generated quizzes, progress tracking, and resource discovery.
+AI Study Coach is a Python/Streamlit app for building study plans, working with study material, generating quizzes, and keeping a simple record of study activity.
 
-## Production Streamlit app
+The repository also contains older agent and service code from earlier versions of the project. The Streamlit app at the root is the maintained entry point for running the current application.
 
-The production-facing Streamlit entrypoint is:
+## Current app
 
-```text
-streamlit_app.py
+Run:
+
+```bash
+streamlit run streamlit_app.py
 ```
 
-It launches the maintained frontend at `src/frontend/app.py`.
+`streamlit_app.py` starts `src/frontend/app.py`.
 
-### Local run
+The current Streamlit app has these sections:
+
+- **Study Plan** — creates a multi-week plan from a subject, level, available time, and goals.
+- **Document Learning** — reads TXT, PDF, DOCX, CSV, and JSON material and can summarize it, explain concepts, or answer questions about it.
+- **Quiz Generator** — creates multiple-choice quizzes and shows the score and explanations after submission.
+- **Progress** — records generated plans and completed quizzes for the current Streamlit session.
+- **Profile** — keeps a small student profile in the current session.
+
+## Requirements
+
+- Python 3.11 or newer
+- pip
+- A Google Gemini API key for the AI features
+
+## Run locally
+
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/Chetan-code-lrca/ai-study-coach-agents.git
 cd ai-study-coach-agents
-python3 -m venv .venv
+```
+
+### 2. Create a virtual environment
+
+Linux/macOS:
+
+```bash
+python3.11 -m venv .venv
 source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-streamlit run streamlit_app.py
 ```
 
 Windows PowerShell:
@@ -29,107 +51,116 @@ Windows PowerShell:
 ```powershell
 py -3.11 -m venv .venv
 .venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-streamlit run streamlit_app.py
 ```
 
-## Gemini configuration
+### 3. Install dependencies
 
-The app uses Google's current `google-genai` Python SDK and the stable `gemini-3.8-flash` model.
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
 
-For local development:
+The main application uses Streamlit, Google's `google-genai` SDK, `pypdf`, and `python-docx`. The repository also keeps dependencies used by the older agent/service modules. fileciteturn767file0
+
+### 4. Add your Gemini API key
+
+Linux/macOS:
 
 ```bash
 export GOOGLE_API_KEY="your-gemini-api-key"
 ```
 
-PowerShell:
+Windows PowerShell:
 
 ```powershell
 $env:GOOGLE_API_KEY = "your-gemini-api-key"
 ```
 
-For Streamlit Community Cloud, add the same secret in the app's **Settings → Secrets**:
+Never commit the real key to Git.
+
+### 5. Start Streamlit
+
+```bash
+streamlit run streamlit_app.py
+```
+
+Streamlit will print the local address, normally:
+
+```text
+http://localhost:8501
+```
+
+## Streamlit Community Cloud
+
+Use the following application settings:
+
+```text
+Repository: Chetan-code-lrca/ai-study-coach-agents
+Branch: main
+Main file: streamlit_app.py
+```
+
+Add this to the app secrets:
 
 ```toml
 GOOGLE_API_KEY = "your-gemini-api-key"
 ```
 
-The application does not store the API key in the repository.
+The application reads the key from Streamlit secrets first and then from the environment. fileciteturn760file0
 
-## Deploy on Streamlit Community Cloud
+## How the AI side works
 
-1. Open Streamlit Community Cloud and sign in with GitHub.
-2. Create a new app from `Chetan-code-lrca/ai-study-coach-agents` and branch `main`.
-3. Set the main file path to `streamlit_app.py`.
-4. Add `GOOGLE_API_KEY` under the app secrets.
-5. Deploy.
+The maintained frontend uses Gemini through Google's `google-genai` client. The current model name in the application is `gemini-3.8-flash`. fileciteturn760file0
 
-After deployment, pushes to `main` can be configured to trigger Streamlit Cloud redeploys automatically.
+The application sends a prompt when a user asks for a study plan, summary, concept explanation, question answer, or quiz. Uploaded documents are converted to text locally before that text is included in an AI request. PDF files are read with `pypdf`, and DOCX files with `python-docx`. fileciteturn760file0
 
-### Important
+## Data handling
 
-This repository is a **Streamlit/Python application**. It is not a Vite/Node application and should not be deployed as a Vercel Vite project. The previous Vercel setup tried to run `npm run build` and failed because this project has no `package.json` build entrypoint.
+The maintained frontend keeps study history, quiz history, the active quiz, document text, and the profile in Streamlit session state. That data is not backed by a database in the current frontend. fileciteturn760file0
 
-## Features
+The repository also contains an older `src/main.py` implementation with a local `.study_coach_data` directory and older Gemini/agent code. That code is kept as part of the project history and experimentation; it is not the entry point used by `streamlit_app.py`. fileciteturn744file0
 
-### Study Plan
-Generate a structured multi-week study plan based on subject, level, available time, and learning goals.
-
-### Document Learning
-Upload TXT, PDF, DOCX, CSV, or JSON study material, then summarize it, explain key concepts, or ask questions about it.
-
-### Quiz Generator
-Generate multiple-choice quizzes with answer keys and explanations. Quiz scores are recorded in the current Streamlit session.
-
-### Progress
-Track generated study plans, completed quizzes, and average quiz performance during the current session.
-
-### Profile
-Maintain a lightweight in-session student profile for personalization.
-
-## Repository structure
+## Project structure
 
 ```text
 ai-study-coach-agents/
 ├── streamlit_app.py
-├── .streamlit/config.toml
+├── .streamlit/
+│   └── config.toml
 ├── src/
-│   ├── main.py
+│   ├── frontend/
+│   │   └── app.py
 │   ├── agents/
 │   ├── services/
-│   └── frontend/app.py
+│   └── main.py
 ├── .devcontainer/
 ├── requirements.txt
 ├── LICENSE
 └── README.md
 ```
 
-The older `src/main.py` and service/agent modules remain in the repository for development and experimentation. The production Streamlit deployment uses the maintained `streamlit_app.py` entrypoint.
+## Checking the app
 
-## Testing
-
-The repository includes a GitHub Actions smoke check that installs the deployment dependencies and compiles the Streamlit entrypoint:
+The basic syntax check is:
 
 ```bash
 python -m py_compile streamlit_app.py src/frontend/app.py
 ```
 
-Run it locally with:
+The main application entry point is deliberately small: it loads the maintained Streamlit frontend with `runpy`. fileciteturn736file0
 
-```bash
-python -m py_compile streamlit_app.py src/frontend/app.py
-```
+## Notes about the older agent code
 
-## Development status
+The repository still contains an earlier `StudyPlannerAgent` implementation and a separate Gemini service. Those modules use the older `google.generativeai` package and different model names from the maintained frontend. They are useful as development/experimental code, but they are not required to run the current Streamlit app. fileciteturn748file0 fileciteturn755file0
 
-The Streamlit frontend is a deployable prototype. Persistent cross-user profile/history storage and the Firebase data layer are not part of the current deployment architecture.
+## Current limitations
+
+- study history and profile data are session-based in the maintained frontend;
+- there is no account system or cross-device sync;
+- uploaded documents are processed as text rather than stored in a document database;
+- Gemini usage requires a valid API key and is subject to the provider's availability and limits;
+- the older agent/service layer is separate from the maintained Streamlit frontend.
 
 ## License
 
-Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0). See `LICENSE` for the full terms.
-
-## Author
-
-Chetan Inaganti
+Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
