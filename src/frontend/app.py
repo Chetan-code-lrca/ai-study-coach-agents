@@ -266,10 +266,18 @@ def render_quiz() -> None:
         if not topic.strip():
             st.warning("Enter a quiz topic.")
             return
+
+        source_instruction = ""
+        if source.strip():
+            source_instruction = (
+                "Use this source material and do not invent unsupported facts:\n"
+                + source[:30000]
+                + "\n"
+            )
+
         prompt = f"""
 Create exactly {count} multiple-choice questions about {topic} at {difficulty} difficulty.
-{('Use this source material and do not invent unsupported facts:\n' + source[:30000]) if source.strip() else ''}
-
+{source_instruction}
 Return ONLY JSON in this shape:
 {{
   "title": "...",
@@ -316,13 +324,11 @@ Return ONLY JSON in this shape:
 
     if st.button("Submit Quiz", use_container_width=True):
         score = 0
-        graded = []
         for index, question in enumerate(questions):
             correct = question.get("correct_index")
             selected = st.session_state.answers.get(index)
-            is_correct = selected == correct
-            score += int(is_correct)
-            graded.append(is_correct)
+            score += int(selected == correct)
+
         st.session_state.quiz_history.append(
             {
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -337,7 +343,9 @@ Return ONLY JSON in this shape:
             correct = question.get("correct_index")
             label = "Correct" if selected == correct else "Review"
             with st.expander(f"Question {index + 1}: {label}"):
-                st.write(f"Correct answer: {question.get('options', [])[correct]}")
+                options = question.get("options", [])
+                if isinstance(correct, int) and 0 <= correct < len(options):
+                    st.write(f"Correct answer: {options[correct]}")
                 st.write(question.get("explanation", ""))
 
 
