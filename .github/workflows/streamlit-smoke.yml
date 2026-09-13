@@ -1,0 +1,27 @@
+name: Streamlit Smoke Check
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install deployment dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Compile Streamlit entrypoint
+        run: python -m py_compile streamlit_app.py src/frontend/app.py
