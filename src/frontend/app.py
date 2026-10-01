@@ -57,7 +57,6 @@ def gemini_text(prompt: str, *, json_mode: bool = False) -> str:
 
     client = get_client(api_key)
     config = types.GenerateContentConfig(
-        temperature=0.4,
         max_output_tokens=4096,
         response_mime_type="application/json" if json_mode else "text/plain",
     )
