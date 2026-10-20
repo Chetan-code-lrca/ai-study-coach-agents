@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ai-study-coach-agents.vercel.app/sitemap.xml
