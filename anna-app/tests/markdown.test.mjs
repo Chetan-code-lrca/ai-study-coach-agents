@@ -60,6 +60,6 @@ test("leaves formulas inside fenced code blocks as code", () => {
 test("shows invalid LaTeX without breaking the rest of the answer", () => {
   const broken = "$\\thisIsNotARealCommand{x}$";
   const html = renderMarkdown("Formula: " + broken + "\n\nThe rest of the answer remains available.");
-  assert.match(html, /katex-error/);
+  assert.match(html, /mathcolor="#cc0000"/);
   assert.match(html, /The rest of the answer remains available/);
 });
