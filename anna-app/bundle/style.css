@@ -188,3 +188,19 @@ input::placeholder, textarea::placeholder { color: #9aa79e; }
 @media (max-width: 760px) {
   .profile-prompt { align-items: flex-start; flex-direction: column; }
 }
+
+
+/* Markdown tables returned by study-plan and note prompts */
+.markdown-table-wrap { width: 100%; max-width: 100%; overflow-x: auto; margin: 12px 0 16px; }
+.markdown-table { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 1.55; }
+.markdown-table th, .markdown-table td { border: 1px solid var(--line); padding: 9px 10px; vertical-align: top; text-align: left; min-width: 70px; }
+.markdown-table th { background: #f1f5f0; color: var(--ink); font-weight: 750; }
+.markdown-table tbody tr:nth-child(even) { background: #fafbf9; }
+.markdown-table .table-align-center { display: block; text-align: center; }
+.markdown-table .table-align-right { display: block; text-align: right; }
+.markdown-table .table-align-left { display: block; text-align: left; }
+.markdown-table td p { margin: 0; }
+@media (max-width: 600px) {
+  .markdown-table { font-size: 12px; min-width: 520px; }
+  .markdown-table th, .markdown-table td { padding: 7px 8px; }
+}
