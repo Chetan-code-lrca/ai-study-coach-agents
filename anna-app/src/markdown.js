@@ -119,26 +119,20 @@ function isTableSeparator(line) {
   return cells.length >= 2 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
 }
 
-function renderTableRow(cells, tag) {
-  return \`<tr>\${cells.map((cell) => \`<\${tag}>\${inlineMarkdown(cell)}</\${tag}>\`).join("")}</tr>\`;
+function renderTableRow(cells, tag, alignments = []) {
+  return "<tr>" + cells.map((cell, index) => {
+    const alignment = alignments[index] || "left";
+    return "<" + tag + ' class="table-align-' + alignment + '">' +
+      inlineMarkdown(cell) + "</" + tag + ">";
+  }).join("") + "</tr>";
 }
 
-function renderMarkdownTable(headerLine, linesAfter, getLine) {
+function renderMarkdownTable(headerLine, separatorLine, getLine) {
   const headers = splitTableCells(headerLine);
-  const separator = linesAfter;
-  if (!isTableSeparator(separator)) return null;
-
-  const separatorCells = splitTableCells(separator);
-  if (headers.length < 2 || separatorCells.length !== headers.length) return null;
-
-  const rows = [];
-  let consumed = 0;
-  while (getLine(consumed) && getLine(consumed).includes("|") && !isTableSeparator(getLine(consumed))) {
-    const cells = splitTableCells(getLine(consumed));
-    if (cells.length === 1 && !getLine(consumed).trim().startsWith("|")) break;
-    const adjusted = headers.map((_header, index) => cells[index] ?? "");
-    rows.push(renderTableRow(adjusted, "td"));
-    consumed += 1;
+  const separatorCells = splitTableCells(separatorLine);
+  if (headers.length < 2 || separatorCells.length !== headers.length ||
+      !separatorCells.every((cell) => /^:?-{3,}:?$/.test(cell))) {
+    return null;
   }
 
   const alignments = separatorCells.map((cell) => {
@@ -146,15 +140,21 @@ function renderMarkdownTable(headerLine, linesAfter, getLine) {
     if (cell.endsWith(":")) return "right";
     return "left";
   });
-  const head = renderTableRow(headers.map((cell, index) =>
-    \`<span class="table-align-\${alignments[index]}">\${cell}</span>\`
-  ), "th");
-  const alignedRows = rows.map((row) => row.replace(/<td>([\s\S]*?)<\/td>/g, (match, cell, index) => {
-    const alignment = alignments[(row.match(/<td>/g) || []).length - 1] || "left";
-    return match.replace(cell, \`<span class="table-align-\${alignment}">\${cell}</span>\`);
-  }));
+  const rows = [];
+  let consumed = 0;
+  while (getLine(consumed) && getLine(consumed).includes("|") &&
+      !isTableSeparator(getLine(consumed))) {
+    const cells = splitTableCells(getLine(consumed));
+    if (cells.length === 1 && !getLine(consumed).trim().startsWith("|")) break;
+    const adjusted = headers.map((_header, index) => cells[index] ?? "");
+    rows.push(renderTableRow(adjusted, "td", alignments));
+    consumed += 1;
+  }
+
+  const head = renderTableRow(headers, "th", alignments);
   return {
-    html: \`<div class="markdown-table-wrap"><table class="markdown-table"><thead>\${head}</thead><tbody>\${alignedRows.join("")}</tbody></table></div>\`,
+    html: '<div class="markdown-table-wrap"><table class="markdown-table"><thead>' +
+      head + '</thead><tbody>' + rows.join("") + "</tbody></table></div>",
     consumed,
   };
 }
