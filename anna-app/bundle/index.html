@@ -22,7 +22,11 @@
       <div class="intro">
         <p class="eyebrow">LEARN WITH A PLAN</p>
         <h2>Make your next study session count.</h2>
-        <p>Plan your weeks, learn from your notes, and test what you remember.</p>
+        <p id="intro-subtitle">Plan your weeks, learn from your notes, and test what you remember.</p>
+        <div class="profile-prompt" id="profile-prompt" hidden>
+          <span>Make plans fit your goals. Set up your study profile once, then return to it whenever you need.</span>
+          <button class="button button-secondary" type="button" id="profile-setup-btn">Set up profile</button>
+        </div>
       </div>
 
       <nav class="tabs" role="tablist" aria-label="Study Coach sections">
@@ -30,6 +34,7 @@
         <button class="tab" type="button" role="tab" aria-selected="false" data-page="learn">Learn from notes</button>
         <button class="tab" type="button" role="tab" aria-selected="false" data-page="quiz">Practice quiz</button>
         <button class="tab" type="button" role="tab" aria-selected="false" data-page="progress">Progress</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" data-page="profile">My profile</button>
       </nav>
 
       <main>
@@ -167,6 +172,46 @@
             <div class="history-section"><div class="result-heading"><h3>Recent quizzes</h3></div><div id="quiz-history" class="history-list"><p class="empty-state">No quiz attempts yet.</p></div></div>
             <p class="status" id="progress-status" role="status" aria-live="polite"></p>
           </div>
+        </section>
+
+        <section class="page" id="page-profile" role="tabpanel" hidden>
+          <div class="section-heading">
+            <div><p class="eyebrow">05 / PERSONALIZE</p><h2>Your study profile</h2></div>
+            <p class="section-note">Save your context once so plans can start closer to your needs.</p>
+          </div>
+          <form class="panel form-grid" id="profile-form">
+            <label class="field">Preferred name
+              <input id="profile-name" name="display_name" maxlength="80" required placeholder="What should the coach call you?">
+            </label>
+            <label class="field">Course or program
+              <input id="profile-course" name="course" maxlength="120" placeholder="e.g. B.Tech CSE (AI/ML)">
+            </label>
+            <label class="field">Current year
+              <select id="profile-year" name="academic_year">
+                <option value="">Select year (optional)</option>
+                <option>1st year</option><option>2nd year</option><option>3rd year</option><option>4th year</option><option>Graduate</option><option>Other</option>
+              </select>
+            </label>
+            <label class="field">Main goal
+              <select id="profile-goal" name="primary_goal">
+                <option value="">Choose a goal</option>
+                <option>GATE preparation</option><option>Semester exams</option><option>Placements and internships</option><option>Competitive exams</option><option>Strengthen fundamentals</option><option>Project and practical skills</option><option>Other</option>
+              </select>
+            </label>
+            <label class="field">Daily study target
+              <select id="profile-hours" name="daily_hours">
+                <option value="0.5">30 minutes</option><option value="1">1 hour</option><option value="1.5">1.5 hours</option><option value="2" selected>2 hours</option><option value="3">3 hours</option><option value="4">4 hours</option><option value="5">5 hours</option>
+              </select>
+            </label>
+            <label class="field field-wide">Subjects and areas to improve
+              <textarea id="profile-focus" name="focus_areas" rows="3" maxlength="1000" placeholder="e.g. Operating Systems, DSA, probability, coding practice"></textarea>
+            </label>
+            <div class="form-actions field-wide">
+              <button class="button button-primary" type="submit" id="profile-save-btn">Save study profile</button>
+              <p class="status" id="profile-status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+          <p class="profile-privacy">Anna handles account sign-in. This app stores your study preferences and activity in Anna Storage; it does not ask for or store a password.</p>
         </section>
       </main>
 
