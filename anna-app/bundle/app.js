@@ -15,6 +15,7 @@ const state = {
   currentQuiz: null,
   answers: {},
   quizSubmitted: false,
+  attachedFiles: [],
 };
 let anna = null;
 
@@ -335,9 +336,250 @@ $("plan-form").addEventListener("submit", async (event) => {
   addStorageHistoryNotice();
 });
 
-$("material-text").addEventListener("input", () => {
-  $("material-count").textContent = `${$("material-text").value.length.toLocaleString()} / 30,000 characters`;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_MATERIAL_CHARS = 30000;
+const SUPPORTED_FILE_TYPES = new Set(["pdf", "docx", "txt", "md", "csv", "json"]);
+const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs";
+const PDFJS_WORKER_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.worker.min.mjs";
+const MAMMOTH_URL = "https://cdn.jsdelivr.net/npm/mammoth@1.13.0/mammoth.browser.min.js";
+let pdfjsPromise = null;
+let mammothPromise = null;
+
+function updateMaterialCount() {
+  $("material-count").textContent = `${$("material-text").value.length.toLocaleString()} / ${MAX_MATERIAL_CHARS.toLocaleString()} characters`;
+}
+
+function fileExtension(fileName) {
+  const dot = String(fileName || "").lastIndexOf(".");
+  return dot >= 0 ? fileName.slice(dot + 1).toLowerCase() : "";
+}
+
+function formatFileSize(size) {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function getPdfJs() {
+  if (!pdfjsPromise) {
+    pdfjsPromise = import(PDFJS_URL).then((library) => {
+      library.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+      return library;
+    }).catch((error) => {
+      pdfjsPromise = null;
+      throw new Error(`Could not load the PDF reader from jsDelivr: ${error?.message || error}`);
+    });
+  }
+  return pdfjsPromise;
+}
+
+async function getMammoth() {
+  if (window.mammoth) return window.mammoth;
+  if (!mammothPromise) {
+    mammothPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = MAMMOTH_URL;
+      script.crossOrigin = "anonymous";
+      script.onload = () => {
+        if (window.mammoth) resolve(window.mammoth);
+        else reject(new Error("The Word document reader loaded without its API."));
+      };
+      script.onerror = () => reject(new Error("Could not load the DOCX reader from jsDelivr."));
+      document.head.append(script);
+    }).catch((error) => {
+      mammothPromise = null;
+      throw error;
+    });
+  }
+  return mammothPromise;
+}
+
+async function extractPdfText(file) {
+  const pdfjs = await getPdfJs();
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const loadingTask = pdfjs.getDocument({ data: bytes, isEvalSupported: false });
+  const pdf = await loadingTask.promise;
+  const pages = [];
+  let characterCount = 0;
+  try {
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .filter((item) => item && typeof item.str === "string")
+        .map((item) => item.str)
+        .join(" ")
+        .trim();
+      if (pageText) pages.push(pageText);
+      characterCount += pageText.length;
+      if (characterCount >= MAX_MATERIAL_CHARS) break;
+    }
+    return { text: pages.join("\n\n"), detail: `${pdf.numPages} page(s)` };
+  } finally {
+    await pdf.destroy();
+  }
+}
+
+async function extractFileText(file) {
+  const extension = fileExtension(file.name);
+  if (!SUPPORTED_FILE_TYPES.has(extension)) {
+    throw new Error(`Unsupported file type: .${extension || "(none)"}. Use PDF, DOCX, TXT, MD, CSV, or JSON.`);
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    throw new Error(`${file.name} exceeds the 10 MB per-file limit.`);
+  }
+  if (!file.size) throw new Error(`${file.name} is empty.`);
+
+  if (extension === "pdf") return extractPdfText(file);
+  if (extension === "docx") {
+    const mammoth = await getMammoth();
+    const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+    return { text: result.value || "", detail: "Word document" };
+  }
+  const text = (await file.text()).replace(/^\uFEFF/, "");
+  return { text, detail: extension.toUpperCase() };
+}
+
+function renderAttachedFiles() {
+  const container = $("attached-files");
+  const list = $("attached-files-list");
+  list.replaceChildren();
+  container.hidden = state.attachedFiles.length === 0;
+  $("attached-files-count").textContent = `${state.attachedFiles.length} file(s) loaded`;
+  for (const file of state.attachedFiles) {
+    const item = document.createElement("li");
+    item.className = "attached-file-item";
+    const icon = document.createElement("span");
+    icon.className = "attached-file-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = file.extension === "pdf" ? "PDF" : file.extension.toUpperCase();
+    const details = document.createElement("span");
+    details.className = "attached-file-details";
+    const name = document.createElement("span");
+    name.className = "attached-file-name";
+    name.textContent = file.name;
+    const meta = document.createElement("span");
+    meta.className = "attached-file-meta";
+    meta.textContent = `${formatFileSize(file.size)} · ${file.characters.toLocaleString()} characters extracted${file.truncated ? " · text truncated to fit the study-material limit" : ""}`;
+    details.append(name, meta);
+    item.append(icon, details);
+    list.append(item);
+  }
+}
+
+async function handleSelectedFiles(fileList) {
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  const button = $("choose-files-btn");
+  button.disabled = true;
+  let loaded = 0;
+  let truncatedAny = false;
+  const errors = [];
+  try {
+    for (const file of files) {
+      const currentLength = $("material-text").value.length;
+      const freeCharacters = MAX_MATERIAL_CHARS - currentLength;
+      if (freeCharacters < 64) {
+        errors.push("The 30,000-character study-material limit has been reached. Clear or shorten the material before adding more.");
+        break;
+      }
+      try {
+        const extracted = await extractFileText(file);
+        const text = String(extracted.text || "").trim();
+        if (!text) {
+          throw new Error(fileExtension(file.name) === "pdf"
+            ? "No selectable text was found. Scanned/image-only PDFs need OCR, which is not included yet."
+            : "No readable text was found.");
+        }
+        const separator = `\n\n--- Source file: ${file.name} ---\n`;
+        const availableForText = Math.max(0, freeCharacters - separator.length);
+        if (!availableForText) {
+          errors.push(`Not enough space to add ${file.name}. Clear or shorten the material first.`);
+          break;
+        }
+        const addedText = text.slice(0, availableForText);
+        const truncated = addedText.length < text.length;
+        $("material-text").value += separator + addedText;
+        state.attachedFiles.push({
+          name: file.name,
+          size: file.size,
+          extension: fileExtension(file.name),
+          characters: addedText.length,
+          truncated,
+        });
+        loaded += 1;
+        truncatedAny = truncatedAny || truncated;
+        updateMaterialCount();
+        renderAttachedFiles();
+        if (truncated) {
+          errors.push(`${file.name} was shortened to fit the 30,000-character limit. Remove or shorten earlier material to add the rest.`);
+          break;
+        }
+      } catch (error) {
+        errors.push(`${file.name}: ${error?.message || error}`);
+      }
+    }
+
+    if (loaded > 0) {
+      const summary = `Loaded ${loaded} file(s). Review the extracted text below before using it.`;
+      const detail = errors.length ? ` ${errors.join(" ")}` : "";
+      setStatus($("file-status"), summary + detail, errors.length ? "error" : "success");
+      $("material-text").focus();
+    } else if (errors.length) {
+      setStatus($("file-status"), errors.join(" "), "error");
+    }
+    if (truncatedAny && !errors.length) {
+      setStatus($("file-status"), "Some text was shortened to fit the 30,000-character limit.", "error");
+    }
+  } finally {
+    button.disabled = false;
+    $("file-input").value = "";
+  }
+}
+
+$("choose-files-btn").addEventListener("click", () => $("file-input").click());
+$("file-input").addEventListener("change", (event) => handleSelectedFiles(event.target.files));
+
+const fileDropZone = $("file-drop-zone");
+fileDropZone.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  fileDropZone.classList.add("is-dragover");
 });
+fileDropZone.addEventListener("dragenter", (event) => {
+  event.preventDefault();
+  fileDropZone.classList.add("is-dragover");
+});
+fileDropZone.addEventListener("dragleave", (event) => {
+  if (!fileDropZone.contains(event.relatedTarget)) fileDropZone.classList.remove("is-dragover");
+});
+fileDropZone.addEventListener("drop", (event) => {
+  event.preventDefault();
+  fileDropZone.classList.remove("is-dragover");
+  handleSelectedFiles(event.dataTransfer?.files);
+});
+
+$("clear-material-btn").addEventListener("click", () => {
+  $("material-text").value = "";
+  state.attachedFiles = [];
+  renderAttachedFiles();
+  updateMaterialCount();
+  setStatus($("file-status"), "Study material cleared.");
+  setStatus($("learn-status"), "");
+});
+
+$("use-for-quiz-btn").addEventListener("click", () => {
+  const material = $("material-text").value.trim();
+  if (!material) {
+    setStatus($("file-status"), "Add or paste study material first.", "error");
+    return;
+  }
+  $("quiz-source").value = material;
+  setActivePage("quiz");
+  setStatus($("quiz-status"), "Study material copied into the quiz source field. Enter a topic and generate your quiz.", "success");
+});
+
+$("material-text").addEventListener("input", updateMaterialCount);
+updateMaterialCount();
 
 async function runMaterialAction(buttonId, action, title) {
   const material = $("material-text").value.trim();
