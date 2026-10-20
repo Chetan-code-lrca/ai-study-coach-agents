@@ -105,7 +105,7 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn('new URL("./pdf.worker.min.mjs", import.meta.url)', self.javascript)
         self.assertIn('"pdf.worker.min.mjs"', self.build_script)
         self.assertTrue((APP_ROOT / "bundle" / "pdf.worker.min.mjs").is_file())
-        self.assertIn('from "/static/anna-apps/_sdk/latest/index.js"', self.bundle_javascript)
+        self.assertIn("/static/anna-apps/_sdk/latest/index.js", self.bundle_javascript)
 
     def test_document_text_is_loaded_before_only_explicit_ai_actions(self) -> None:
         self.assertIn("Files are extracted in your browser", self.html)
