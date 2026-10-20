@@ -76,10 +76,37 @@
             <p class="section-note">Paste a passage or class notes. The coach will ground its answer in the supplied material.</p>
           </div>
           <div class="panel">
-            <label class="field">Study material
-              <textarea id="material-text" rows="8" maxlength="30000" placeholder="Paste lecture notes, textbook extracts, definitions, or your own notes here (up to 30,000 characters)."></textarea>
+            <section class="file-import" aria-labelledby="file-import-title">
+              <div class="file-import-heading">
+                <div>
+                  <p class="eyebrow">ADD YOUR MATERIAL</p>
+                  <h3 id="file-import-title">Drop your study files here</h3>
+                </div>
+                <span class="file-limit">10 MB per file</span>
+              </div>
+              <div class="drop-zone" id="file-drop-zone">
+                <span class="drop-zone-icon" aria-hidden="true">⇧</span>
+                <p class="drop-zone-title">Drag and drop files into this area</p>
+                <p class="drop-zone-help">PDF, DOCX, TXT, Markdown, CSV, or JSON</p>
+                <button class="button button-secondary" type="button" id="choose-files-btn">Browse files</button>
+                <input id="file-input" type="file" accept=".pdf,.docx,.txt,.md,.csv,.json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv,application/json" multiple hidden>
+              </div>
+              <p class="status file-status" id="file-status" role="status" aria-live="polite">Files are extracted in your browser. Their text is sent to Anna only when you request an AI action.</p>
+              <div class="attached-files" id="attached-files" hidden>
+                <div class="attached-files-header">
+                  <strong id="attached-files-count">0 files loaded</strong>
+                  <button class="text-button" type="button" id="clear-material-btn">Clear material</button>
+                </div>
+                <ul id="attached-files-list" class="attached-files-list"></ul>
+              </div>
+            </section>
+            <label class="field material-label">Study material
+              <textarea id="material-text" rows="8" maxlength="30000" placeholder="Drop a file above or paste lecture notes, textbook extracts, definitions, or your own notes here (up to 30,000 characters)."></textarea>
             </label>
-            <div class="material-meta"><span id="material-count">0 / 30,000 characters</span><span>Material is sent to Anna only when you request an action.</span></div>
+            <div class="material-meta"><span id="material-count">0 / 30,000 characters</span><span>Extracted text remains in this window until you request an AI action.</span></div>
+            <div class="button-row file-actions">
+              <button class="button button-secondary" type="button" id="use-for-quiz-btn">Use these notes for a quiz</button>
+            </div>
             <div class="button-row">
               <button class="button button-primary" type="button" id="summarize-btn">Summarize notes</button>
               <button class="button button-secondary" type="button" id="explain-btn">Explain concepts</button>
