@@ -5,11 +5,13 @@ on:
     branches: ["main", "feat/anna-study-coach-mvp", "fix/anna-study-coach-runtime", "fix/study-coach-direct-llm"]
     paths:
       - "anna-app/**"
+      - "scripts/update-anna-app.sh"
       - ".github/workflows/anna-app-smoke.yml"
   pull_request:
     branches: ["main"]
     paths:
       - "anna-app/**"
+      - "scripts/update-anna-app.sh"
       - ".github/workflows/anna-app-smoke.yml"
   workflow_dispatch:
 
@@ -35,6 +37,9 @@ jobs:
 
       - name: Install Anna CLI
         run: npm install --global @anna-ai/cli
+
+      - name: Check Linux sync helper syntax
+        run: bash -n scripts/update-anna-app.sh
 
       - name: Build the self-contained frontend bundle
         working-directory: anna-app
