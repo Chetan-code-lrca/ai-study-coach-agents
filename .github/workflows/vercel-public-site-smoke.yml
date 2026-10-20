@@ -1,0 +1,34 @@
+name: Vercel Public Site Smoke Check
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "public/**"
+      - "vercel.json"
+      - "tests/public-site.test.mjs"
+      - ".github/workflows/vercel-public-site-smoke.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "public/**"
+      - "vercel.json"
+      - "tests/public-site.test.mjs"
+      - ".github/workflows/vercel-public-site-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify public site, accessibility basics, and Vercel output
+        run: node --test tests/public-site.test.mjs
