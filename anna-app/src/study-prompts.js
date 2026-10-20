@@ -96,6 +96,8 @@ export function buildStudyRequest(action, args = {}) {
         `Learning goals: ${goals}`,
         "",
         "Structure the answer by week and provide a realistic day-by-day schedule.",
+        "Do not use Markdown tables or pipe-delimited rows. Use a heading for each week, one short focus line, then a numbered list with a separate list item for each day.",
+        "For each day, state the topic and split the available time into specific activities. Put every day on its own line; never merge multiple days into one paragraph.",
         "Include topic sequencing, active recall, practice questions, spaced revision, catch-up time, and a weekly checkpoint.",
         "Keep the total workload within the student's stated availability. End with a short method for adjusting the plan when the student falls behind.",
       ].join("\n"),
