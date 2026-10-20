@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8f5">
+  <meta name="description" content="AI Study Coach helps students plan realistic study weeks, learn from their own notes, practise with quizzes, and review progress in one focused workflow.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="AI Study Coach — Make study time count">
+  <meta property="og:description" content="Plan your weeks, learn from your notes, practise recall, and review what you know.">
+  <meta property="og:url" content="https://ai-study-coach-agents.vercel.app/">
+  <meta name="twitter:card" content="summary">
+  <title>AI Study Coach — Make study time count</title>
+  <link rel="canonical" href="https://ai-study-coach-agents.vercel.app/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="/" aria-label="AI Study Coach home">
+        <span class="brand-mark" aria-hidden="true">SC</span>
+        <span class="brand-wordmark">AI Study Coach</span>
+      </a>
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open navigation" aria-controls="primary-nav" aria-expanded="false">
+        <span></span><span></span>
+      </button>
+      <nav class="nav-links" id="primary-nav" aria-label="Main navigation">
+        <a href="#workflow">How it works</a>
+        <a href="#features">Capabilities</a>
+        <a href="#principles">Our principles</a>
+        <a class="nav-cta" href="https://github.com/Chetan-code-lrca/ai-study-coach-agents" target="_blank" rel="noreferrer">Explore the project <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="hero-grid container">
+        <div class="hero-copy">
+          <div class="eyebrow-row"><span class="eyebrow-mark" aria-hidden="true"></span><p class="eyebrow">A more deliberate way to study</p></div>
+          <h1>Make study time <span>count.</span></h1>
+          <p class="hero-lede">Turn a busy syllabus into a realistic plan. Learn from the notes you already have. Practise what you remember. See where to focus next.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#workflow">Explore the workflow <span aria-hidden="true">↓</span></a>
+            <a class="button button-secondary" href="https://github.com/Chetan-code-lrca/ai-study-coach-agents" target="_blank" rel="noreferrer">View source <span aria-hidden="true">↗</span></a>
+          </div>
+          <div class="hero-note">
+            <span class="note-icon" aria-hidden="true">✓</span>
+            <p>Built around your study material and available time—not a one-size-fits-all timetable.</p>
+          </div>
+        </div>
+
+        <div class="product-preview" aria-label="Illustrative preview of the study workflow">
+          <div class="preview-chrome">
+            <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+            <span>STUDY WORKSPACE</span>
+            <span class="preview-live"><i aria-hidden="true"></i> Sample preview</span>
+          </div>
+          <div class="preview-body">
+            <div class="preview-welcome">
+              <div>
+                <p class="mini-label">THIS WEEK</p>
+                <h2>A plan you can follow.</h2>
+                <p>Small sessions. Clear priorities. Time to review.</p>
+              </div>
+              <div class="week-mark" aria-hidden="true"><span>W</span><b>01</b></div>
+            </div>
+            <div class="preview-plan">
+              <div class="preview-card-heading"><span>Study plan</span><span class="pill">3 of 5 days</span></div>
+              <div class="week-progress" role="img" aria-label="Illustrative weekly progress, three of five study days"><span></span></div>
+              <div class="session-row">
+                <span class="day-chip">MON</span>
+                <div class="session-copy"><strong>Discrete mathematics</strong><span>Logic · 45 min</span></div>
+                <span class="session-check" aria-label="Sample session complete">✓</span>
+              </div>
+              <div class="session-row">
+                <span class="day-chip">TUE</span>
+                <div class="session-copy"><strong>Operating systems</strong><span>Processes · 60 min</span></div>
+                <span class="session-status">Next</span>
+              </div>
+              <div class="session-row">
+                <span class="day-chip">WED</span>
+                <div class="session-copy"><strong>Active recall</strong><span>Short practice quiz · 20 min</span></div>
+                <span class="session-arrow" aria-hidden="true">↗</span>
+              </div>
+            </div>
+            <div class="preview-bottom">
+              <div class="review-card">
+                <div class="review-icon" aria-hidden="true">✓</div>
+                <div><span class="mini-label">PRACTICE</span><strong>Review mistakes</strong><p>Use feedback to choose what to revisit.</p></div>
+              </div>
+              <div class="score-card">
+                <span class="mini-label">QUIZ SCORE</span>
+                <strong>4<span>/5</span></strong>
+                <div class="score-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i class="bar-empty"></i></div>
+              </div>
+            </div>
+            <p class="preview-disclaimer">Illustrative sample data · not a live student account</p>
+          </div>
+        </div>
+      </div>
+      <div class="hero-foot container">
+        <span>PLAN WITH INTENT</span><span aria-hidden="true"></span><span>LEARN FROM YOUR NOTES</span><span aria-hidden="true"></span><span>PRACTISE ACTIVE RECALL</span><span aria-hidden="true"></span><span>REFLECT AND ADJUST</span>
+      </div>
+    </section>
+
+    <section class="section section-features" id="features">
+      <div class="container">
+        <div class="section-intro">
+          <p class="eyebrow">THE WORKFLOW</p>
+          <h2>Everything has a place.<br><span>Every session has a purpose.</span></h2>
+          <p>Study planning, learning from documents, practice, and progress belong together. Keep the loop simple enough to return to.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <span class="feature-number">01</span>
+            <div class="feature-icon icon-plan" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6"/></svg></div>
+            <h3>Plan realistically</h3>
+            <p>Build a week-by-week study plan around your subject, current level, time, and goals—with room for review and catch-up.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-number">02</span>
+            <div class="feature-icon icon-learn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21z"/><path d="M4 5.5v13A2.5 2.5 0 0 1 6.5 16H20M8 7h8M8 10h7"/></svg></div>
+            <h3>Learn from your notes</h3>
+            <p>Bring PDF, DOCX, text, Markdown, CSV, or JSON material. Ask for summaries, concept explanations, and answers grounded in the supplied text.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-number">03</span>
+            <div class="feature-icon icon-practice" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 20 7v5c0 4.5-3.1 7.5-8 9-4.9-1.5-8-4.5-8-9V7z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></div>
+            <h3>Practise with feedback</h3>
+            <p>Generate multiple-choice quizzes, submit answers, inspect explanations, and revisit errors instead of only checking a final score.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-number">04</span>
+            <div class="feature-icon icon-progress" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5M4 19h17"/><path d="m7 15 4-4 3 2 6-7"/></svg></div>
+            <h3>Keep track of progress</h3>
+            <p>Save your study profile, review recent plans, reopen saved plans, and examine quiz answers and scores over time.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section workflow-section" id="workflow">
+      <div class="container workflow-layout">
+        <div class="workflow-copy">
+          <p class="eyebrow">A CLEAR STUDY LOOP</p>
+          <h2>From “I need to study” to <span>knowing what to do next.</span></h2>
+          <p>Start with one subject and the time you actually have. Use your material to learn, test your understanding, and let the next session respond to what you found difficult.</p>
+          <a class="inline-link" href="https://github.com/Chetan-code-lrca/ai-study-coach-agents" target="_blank" rel="noreferrer">Explore the source and build history <span aria-hidden="true">↗</span></a>
+        </div>
+        <ol class="workflow-steps">
+          <li><span class="step-index">01</span><div><h3>Set the direction</h3><p>Choose the subject, goal, study level, and available time.</p></div></li>
+          <li><span class="step-index">02</span><div><h3>Bring your material</h3><p>Review the extracted text before asking the coach to use it.</p></div></li>
+          <li><span class="step-index">03</span><div><h3>Test recall</h3><p>Answer questions before looking at the correct answer and explanation.</p></div></li>
+          <li><span class="step-index">04</span><div><h3>Adjust the next session</h3><p>Use saved plans and quiz results to decide what to revisit.</p></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section principles-section" id="principles">
+      <div class="container principles-layout">
+        <div class="principles-heading">
+          <p class="eyebrow">BUILT WITH CARE</p>
+          <h2>Useful first.<br><span>Clear by design.</span></h2>
+        </div>
+        <div class="principles-grid">
+          <article><span class="principle-mark" aria-hidden="true">A</span><div><h3>Your material stays central</h3><p>Document text is reviewed before use. AI responses should be checked against course notes and official material.</p></div></article>
+          <article><span class="principle-mark" aria-hidden="true">B</span><div><h3>Progress should be understandable</h3><p>Saved plans and quiz reviews show what was done, what was correct, and what deserves another look.</p></div></article>
+          <article><span class="principle-mark" aria-hidden="true">C</span><div><h3>No extra password to remember</h3><p>The Anna-native app relies on Anna for platform sign-in and uses the app's storage for study preferences and activity.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing-section">
+      <div class="container closing-card">
+        <div class="closing-copy">
+          <p class="eyebrow">A PROJECT IN THE OPEN</p>
+          <h2>Better study habits begin with a <span>clear next step.</span></h2>
+          <p>AI Study Coach is being developed as an Anna-native learning workspace. This site is its public overview; the interactive coach runs inside Anna's app runtime.</p>
+        </div>
+        <div class="closing-actions">
+          <a class="button button-light" href="https://github.com/Chetan-code-lrca/ai-study-coach-agents" target="_blank" rel="noreferrer">Explore the project <span aria-hidden="true">↗</span></a>
+          <a class="closing-secondary" href="https://anna.partners/developers" target="_blank" rel="noreferrer">About apps on Anna <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <a class="brand footer-brand" href="/" aria-label="AI Study Coach home"><span class="brand-mark" aria-hidden="true">SC</span><span class="brand-wordmark">AI Study Coach</span></a>
+      <p>Made to support learning—not replace the work of learning.</p>
+      <div class="footer-links"><a href="https://github.com/Chetan-code-lrca/ai-study-coach-agents" target="_blank" rel="noreferrer">GitHub</a><a href="https://anna.partners/developers" target="_blank" rel="noreferrer">Anna Developer Hub</a></div>
+      <p class="copyright">© <span id="current-year">2026</span> AI Study Coach</p>
+    </div>
+  </footer>
+</body>
+</html>
