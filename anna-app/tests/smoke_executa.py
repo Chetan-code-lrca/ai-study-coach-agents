@@ -16,8 +16,8 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
-ROOT = Path(__file__).resolve().parents[2]
-PROJECT = ROOT / "executas" / "study-coach"
+APP_ROOT = Path(__file__).resolve().parents[1]
+PROJECT = APP_ROOT / "executas" / "study-coach"
 COMMAND = ["uv", "run", "--project", str(PROJECT), "tool-dev-ai-study-coach"]
 
 
