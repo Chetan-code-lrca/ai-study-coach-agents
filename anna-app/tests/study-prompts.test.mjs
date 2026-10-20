@@ -14,6 +14,9 @@ test("study plan preserves subject, schedule limits, and goals", () => {
   assert.match(request.prompt, /6 weeks/);
   assert.match(request.prompt, /1\.5 hours per day/);
   assert.match(request.prompt, /Prepare for GATE/);
+  assert.match(request.prompt, /Do not use Markdown tables or pipe-delimited rows/);
+  assert.match(request.prompt, /a separate list item for each day/);
+  assert.match(request.prompt, /never merge multiple days into one paragraph/);
   assert.equal(request.maxTokens, 3000);
 });
 
