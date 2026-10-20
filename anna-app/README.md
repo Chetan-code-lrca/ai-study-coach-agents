@@ -5,7 +5,9 @@ This is the Anna-native version of the existing AI Study Coach project. The orig
 ## Features in this first version
 
 - Generate a multi-week study plan from subject, level, available daily time, and learning goals.
-- Summarize pasted notes, explain key concepts, and answer questions using the supplied material as the source.
+- Drag and drop or browse for PDF, DOCX, TXT, Markdown, CSV, and JSON study files; extract text in the browser and review/edit it before AI use.
+- Summarize notes, explain key concepts, and answer questions using the supplied material as the source.
+- Copy loaded study material into the quiz source field to generate a quiz from your own files.
 - Generate multiple-choice quizzes, score attempts, and show answer explanations.
 - Save study-plan and quiz activity with Anna Storage.
 - Use Anna's hosted LLM through the bundled Python Executa and reverse Sampling; this app does not require a separate Gemini API key.
@@ -41,6 +43,8 @@ The GitHub Actions workflow runs strict Anna validation and offline unit/contrac
 
 ## Notes and limitations
 
-- The Anna app initially accepts pasted text; it does not yet provide the Streamlit version's PDF/DOCX file-upload flow.
+- File text extraction is performed in the browser with pinned PDF.js and Mammoth builds served by jsDelivr. Files are not uploaded for extraction; extracted text is only sent to Anna when you click an AI action.
+- The per-file size limit is 10 MB and the total extracted study-material limit is 30,000 characters. Scanned/image-only PDFs are not supported because OCR is not included.
+- PDF.js and Mammoth are loaded on demand from jsDelivr; an internet connection is needed the first time you process a PDF or DOCX. Plain-text formats do not need these parsers.
 - Study plans and completed quiz attempts are stored in Anna Storage. This first version does not include a separate sign-in flow or profile editor.
 - The tests verify prompt validation, configuration wiring, and frontend/Executa contracts. They do not prove live LLM availability, sampling grants, production publishing, or user adoption.
