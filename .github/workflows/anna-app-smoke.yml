@@ -1,0 +1,48 @@
+name: Anna App Smoke Check
+
+on:
+  push:
+    branches: ["main", "feat/anna-study-coach-mvp"]
+    paths:
+      - "anna-app/**"
+      - ".github/workflows/anna-app-smoke.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "anna-app/**"
+      - ".github/workflows/anna-app-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Anna CLI
+        run: npm install --global @anna-ai/cli
+
+      - name: Validate Anna App manifest and bundle
+        working-directory: anna-app
+        run: anna-app validate --strict
+
+      - name: Run offline unit and contract tests
+        working-directory: anna-app
+        run: python -m unittest discover -s tests -v
+
+      - name: Compile the Executa sources
+        run: python -m py_compile anna-app/executas/study-coach/study_logic.py anna-app/executas/study-coach/study_coach_plugin.py
