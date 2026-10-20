@@ -62,3 +62,25 @@ test("shows invalid LaTeX without breaking the rest of the answer", () => {
   assert.match(html, /mathcolor="#cc0000"/);
   assert.match(html, /The rest of the answer remains available/);
 });
+
+
+test("renders Markdown tables as structured rows with formatting and math", () => {
+  const source = "| Day | Topic | Activity |\n| --- | :---: | ---: |\n| 1 | **Logic** | Review $\bar{x}$ |\n| 2 | Sets | Use truth tables |\n\nNext section.";
+  const html = renderMarkdown(source);
+  assert.match(html, /<table class="markdown-table">/);
+  assert.match(html, /<th class="table-align-left">Day<\/th>/);
+  assert.match(html, /<th class="table-align-center">Topic<\/th>/);
+  assert.match(html, /<th class="table-align-right">Activity<\/th>/);
+  assert.match(html, /<td class="table-align-center"><strong>Logic<\/strong><\/td>/);
+  assert.match(html, /class="katex"/);
+  assert.match(html, /<td class="table-align-left">Sets<\/td>/);
+  assert.match(html, /Next section/);
+});
+
+test("escapes HTML inside Markdown table cells", () => {
+  const source = "| Topic | Notes |\n| --- | --- |\n| Logic | <script>alert(1)</script> |\n";
+  const html = renderMarkdown(source);
+  assert.match(html, /&lt;script&gt;/);
+  assert.doesNotMatch(html, /<script>/);
+  assert.match(html, /<table class="markdown-table">/);
+});
