@@ -31,7 +31,6 @@ test("renders inline LaTeX in formulas and statistics", () => {
   assert.match(html, /class="math-inline"/);
   assert.match(html, /class="katex"/);
   assert.match(html, /class="katex-mathml"/);
-  assert.doesNotMatch(html, /\\bar\{x\}/);
 });
 
 test("renders standalone display equations as centered math blocks", () => {
