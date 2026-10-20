@@ -56,7 +56,9 @@ class AnnaContractTests(unittest.TestCase):
         host_api = self.manifest["ui"]["host_api"]
         self.assertEqual(host_api["storage"], ["get", "set"])
         self.assertEqual(host_api["window"], ["set_title"])
-        self.assertNotIn("llm", host_api)
+        # Anna's current LLM runtime checks the app-level llm.complete grant
+        # in addition to the Executa's llm.sample capability.
+        self.assertEqual(host_api["llm"], ["complete"])
         self.assertNotIn("tools", host_api)
 
 
