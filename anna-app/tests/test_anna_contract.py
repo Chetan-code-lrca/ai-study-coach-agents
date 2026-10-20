@@ -135,8 +135,8 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn("profile: state.profile", self.javascript)
         self.assertIn("key: STORAGE_KEY", self.javascript)
         self.assertIn("dailyHours", self.javascript)
-        self.assertIn("state.profile.primaryGoal", self.javascript)
-        self.assertIn("state.profile.focusAreas", self.javascript)
+        self.assertIn("profile.primaryGoal", self.javascript)
+        self.assertIn("profile.focusAreas", self.javascript)
 
     def test_first_run_profile_prompt_is_hidden_after_profile_load(self) -> None:
         self.assertIn('id="profile-prompt" hidden', self.html)
