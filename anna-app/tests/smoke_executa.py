@@ -8,6 +8,7 @@ answers the reverse sampling request, and checks the app-tool response.
 from __future__ import annotations
 
 import json
+import os
 import queue
 import subprocess
 import sys
@@ -72,13 +73,18 @@ def _send(process: subprocess.Popen[str], frame: dict[str, Any]) -> None:
 def main() -> None:
     stdout_queue: queue.Queue[str | None] = queue.Queue()
     stderr_lines: list[str] = []
+    # Simulate the legacy Windows console code page that exposed the Unicode
+    # bug. The Executa must still emit valid JSON-RPC when stdout uses cp1252.
+    child_env = os.environ.copy()
+    child_env["PYTHONIOENCODING"] = "cp1252:strict"
     process = subprocess.Popen(
         COMMAND,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-        encoding="utf-8",
+        encoding="ascii",
+        env=child_env,
         bufsize=1,
     )
     assert process.stdout is not None and process.stderr is not None
@@ -129,6 +135,7 @@ def main() -> None:
                         "level": "Intermediate",
                         "weeks": 2,
                         "hours_per_day": 1,
+                        "goals": "Use arrows → and accents café in the study plan.",
                     },
                     "invoke_id": "ci-smoke",
                 },
@@ -145,6 +152,8 @@ def main() -> None:
         params = sampling_request.get("params") or {}
         assert params.get("maxTokens") == 3000, sampling_request
         assert params.get("messages"), sampling_request
+        sent_prompt = params["messages"][0]["content"]["text"]
+        assert "→" in sent_prompt and "café" in sent_prompt, sent_prompt
 
         # Stub Anna's host-side model response to exercise the complete tool
         # request/response path without credentials, network calls, or billing.
@@ -154,7 +163,7 @@ def main() -> None:
                 "jsonrpc": "2.0",
                 "id": sampling_request["id"],
                 "result": {
-                    "content": {"type": "text", "text": "Mock study plan from CI."},
+                    "content": {"type": "text", "text": "Mock study plan → café from CI."},
                     "model": "ci-mock-model",
                     "usage": {"inputTokens": 12, "outputTokens": 8},
                     "stopReason": "endTurn",
@@ -165,7 +174,7 @@ def main() -> None:
         result = invoked.get("result") or {}
         assert result.get("success") is True, invoked
         assert result.get("tool") == "study_coach", invoked
-        assert (result.get("data") or {}).get("text") == "Mock study plan from CI.", invoked
+        assert (result.get("data") or {}).get("text") == "Mock study plan → café from CI.", invoked
         assert (result.get("data") or {}).get("model") == "ci-mock-model", invoked
 
         _send(process, {"jsonrpc": "2.0", "method": "shutdown", "id": 5})
@@ -174,7 +183,7 @@ def main() -> None:
             process.stdin.close()
         process.wait(timeout=15)
         assert process.returncode == 0, f"Unexpected exit: {process.returncode}; stderr={''.join(stderr_lines)}"
-        print("Executa startup, health, initialize, reverse-sampling dispatch, and invoke response passed.")
+        print("Executa startup, health, initialize, Unicode reverse-sampling dispatch, and invoke response passed.")
     finally:
         if process.poll() is None:
             process.kill()
