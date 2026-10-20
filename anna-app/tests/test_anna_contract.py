@@ -60,6 +60,7 @@ class AnnaContractTests(unittest.TestCase):
         # in addition to the Executa's llm.sample capability.
         self.assertEqual(host_api["llm"], ["complete"])
         self.assertNotIn("tools", host_api)
+        self.assertEqual(host_api["llm"], ["complete"])
 
 
     def test_form_selects_have_native_options_and_compact_styles(self) -> None:
@@ -75,6 +76,35 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn("cursor: pointer", self.css)
         self.assertIn("overflow-y: hidden", self.css)
         self.assertIn("@media (max-width: 760px)", self.css)
+
+
+    def test_local_file_drop_zone_supports_source_project_document_types(self) -> None:
+        self.assertIn('id="file-drop-zone"', self.html)
+        self.assertIn('id="file-input"', self.html)
+        self.assertIn('id="choose-files-btn"', self.html)
+        self.assertIn('id="use-for-quiz-btn"', self.html)
+        for extension in ("pdf", "docx", "txt", "md", "csv", "json"):
+            self.assertIn(f'"{extension}"', self.javascript)
+        self.assertIn("extractPdfText(file)", self.javascript)
+        self.assertIn("mammoth.extractRawText", self.javascript)
+        self.assertIn("MAX_FILE_BYTES = 10 * 1024 * 1024", self.javascript)
+        self.assertIn("MAX_MATERIAL_CHARS = 30000", self.javascript)
+
+    def test_pinned_document_parsers_have_explicit_csp_and_external_origin(self) -> None:
+        bundle = self.manifest["ui"]["bundle"]
+        self.assertIn("https://cdn.jsdelivr.net", bundle["external_origins"])
+        csp = self.manifest["ui"]["csp_overrides"]
+        self.assertIn("https://cdn.jsdelivr.net", csp["script-src"])
+        self.assertIn("blob:", csp["worker-src"])
+        self.assertIn("pdfjs-dist@6.4.299", self.javascript)
+        self.assertIn("mammoth@1.13.0", self.javascript)
+
+    def test_document_text_is_loaded_before_only_explicit_ai_actions(self) -> None:
+        self.assertIn("Files are extracted in your browser", self.html)
+        self.assertIn("Material is sent to Anna only when you request an action", self.html)
+        self.assertIn('id="summarize-btn"', self.html)
+        self.assertIn('id="answer-btn"', self.html)
+        self.assertIn('id="use-for-quiz-btn"', self.html)
 
     def test_frontend_displays_runtime_errors_and_loading_status(self) -> None:
         self.assertIn("Working with Anna's model", self.javascript)
