@@ -54,6 +54,12 @@ jobs:
           cp anna-app/bundle/app.js /tmp/anna-study-coach.mjs
           node --check /tmp/anna-study-coach.mjs
 
+      - name: Verify pinned browser document parsers
+        run: |
+          curl --fail --silent --show-error --output /dev/null https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs
+          curl --fail --silent --show-error --output /dev/null https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.worker.min.mjs
+          curl --fail --silent --show-error --output /dev/null https://cdn.jsdelivr.net/npm/mammoth@1.13.0/mammoth.browser.min.js
+
       - name: Exercise Executa startup and reverse sampling
         run: python anna-app/tests/smoke_executa.py
 
