@@ -166,3 +166,25 @@ input::placeholder, textarea::placeholder { color: #9aa79e; }
   .markdown-result .katex { font-size: 1em; }
   .markdown-result .math-display { text-align: left; }
 }
+
+
+/* Study profile and first-run prompt */
+.profile-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 13px;
+}
+.profile-prompt span { flex: 1; min-width: 0; }
+.profile-privacy { margin: 12px 2px 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+#page-profile .panel { max-width: 820px; }
+@media (max-width: 760px) {
+  .profile-prompt { align-items: flex-start; flex-direction: column; }
+}

@@ -10,6 +10,7 @@ const $ = (id) => document.getElementById(id);
 const state = {
   studyPlans: [],
   quizHistory: [],
+  profile: null,
   currentQuiz: null,
   answers: {},
   quizSubmitted: false,
@@ -87,6 +88,50 @@ async function completeStudyAction(action, payload) {
   };
 }
 
+function normalizeProfile(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const displayName = typeof value.displayName === "string" ? value.displayName.trim().slice(0, 80) : "";
+  if (!displayName) return null;
+  const allowedHours = new Set(["0.5", "1", "1.5", "2", "3", "4", "5"]);
+  const dailyHours = allowedHours.has(String(value.dailyHours)) ? String(value.dailyHours) : "2";
+  return {
+    displayName,
+    course: typeof value.course === "string" ? value.course.trim().slice(0, 120) : "",
+    academicYear: typeof value.academicYear === "string" ? value.academicYear.trim().slice(0, 40) : "",
+    primaryGoal: typeof value.primaryGoal === "string" ? value.primaryGoal.trim().slice(0, 80) : "",
+    dailyHours,
+    focusAreas: typeof value.focusAreas === "string" ? value.focusAreas.trim().slice(0, 1000) : "",
+    updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : new Date().toISOString(),
+  };
+}
+
+function populateProfileForm() {
+  const profile = state.profile;
+  $("profile-name").value = profile?.displayName || "";
+  $("profile-course").value = profile?.course || "";
+  $("profile-year").value = profile?.academicYear || "";
+  $("profile-goal").value = profile?.primaryGoal || "";
+  $("profile-hours").value = profile?.dailyHours || "2";
+  $("profile-focus").value = profile?.focusAreas || "";
+}
+
+function applyProfilePresentation() {
+  const profile = state.profile;
+  $("profile-prompt").hidden = Boolean(profile?.displayName);
+  $("intro-subtitle").textContent = profile?.displayName
+    ? `Welcome back, ${profile.displayName}. Your study goals and activity are saved with this Anna app.`
+    : "Plan your weeks, learn from your notes, and test what you remember.";
+  if (profile) {
+    $("plan-hours").value = profile.dailyHours;
+    if (!$("plan-goals").value.trim()) {
+      const pieces = [];
+      if (profile.primaryGoal) pieces.push(`Primary goal: ${profile.primaryGoal}.`);
+      if (profile.focusAreas) pieces.push(`Focus areas: ${profile.focusAreas}.`);
+      $("plan-goals").value = pieces.join(" ");
+    }
+  }
+}
+
 async function loadActivity() {
   try {
     const stored = await anna.storage.get({ key: STORAGE_KEY });
@@ -95,10 +140,13 @@ async function loadActivity() {
     if (value && typeof value === "object") {
       if (Array.isArray(value.studyPlans)) state.studyPlans = value.studyPlans;
       if (Array.isArray(value.quizHistory)) state.quizHistory = value.quizHistory;
+      state.profile = normalizeProfile(value.profile);
     }
   } catch (error) {
-    setStatus($("progress-status"), "Could not load saved activity from Anna storage. This session will still work.");
+    setStatus($("progress-status"), "Could not load saved profile and activity from Anna storage. This session will still work.", "error");
   }
+  populateProfileForm();
+  applyProfilePresentation();
   renderProgress();
 }
 
@@ -107,14 +155,15 @@ async function saveActivity() {
     await anna.storage.set({
       key: STORAGE_KEY,
       value: {
+        profile: state.profile,
         studyPlans: state.studyPlans.slice(-50),
         quizHistory: state.quizHistory.slice(-100),
       },
     });
     return true;
   } catch (error) {
-    setStatus($("progress-status"), "Activity is available in this window, but Anna storage could not save it.");
-    showToast("Your result was created, but activity could not be saved.");
+    setStatus($("progress-status"), "Profile and activity are available in this window, but Anna storage could not save them.", "error");
+    showToast("Your result is ready, but Anna Storage could not save your profile or activity.");
     return false;
   }
 }
@@ -646,6 +695,45 @@ document.querySelectorAll("[data-copy]").forEach((button) => {
       showToast("Clipboard access is unavailable in this window.");
     }
   });
+});
+
+
+$("profile-setup-btn").addEventListener("click", () => {
+  setActivePage("profile");
+  $("profile-name").focus();
+});
+
+$("profile-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = $("profile-save-btn");
+  if (button.disabled) return;
+  button.disabled = true;
+  try {
+    state.profile = normalizeProfile({
+      displayName: $("profile-name").value,
+      course: $("profile-course").value,
+      academicYear: $("profile-year").value,
+      primaryGoal: $("profile-goal").value,
+      dailyHours: $("profile-hours").value,
+      focusAreas: $("profile-focus").value,
+      updatedAt: new Date().toISOString(),
+    });
+    if (!state.profile) {
+      setStatus($("profile-status"), "Enter a preferred name before saving.", "error");
+      return;
+    }
+    const saved = await saveActivity();
+    populateProfileForm();
+    applyProfilePresentation();
+    if (saved) {
+      setStatus($("profile-status"), "Your study profile is saved. Your daily target and focus areas will prefill new study plans.", "success");
+      showToast("Study profile saved.");
+    } else {
+      setStatus($("profile-status"), "Profile updated for this session, but Anna Storage could not save it. Check your storage connection.", "error");
+    }
+  } finally {
+    button.disabled = false;
+  }
 });
 
 async function bootstrap() {

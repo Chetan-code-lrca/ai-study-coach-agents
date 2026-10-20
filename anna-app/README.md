@@ -8,10 +8,13 @@ This is the Anna-native version of the existing AI Study Coach project. The orig
 - Drag and drop or browse for PDF, DOCX, TXT, Markdown, CSV, and JSON study files.
 - Extract document text in the browser, review/edit it, and ask Anna to summarize it, explain concepts, or answer questions grounded in the source.
 - Generate multiple-choice quizzes from a topic or from the loaded study material.
+- Save a personal study profile (preferred name, course/year, primary goal, daily target, and focus areas) alongside activity history.
 - Score quiz attempts, show answer explanations, and save study-plan/quiz activity with Anna Storage.
 - Render model answers as formatted Markdown, including inline and display LaTeX equations with locally bundled KaTeX.
 
 ## Architecture
+
+The app does not implement a separate email/password login. Anna handles platform sign-in; the app stores an optional study profile and activity via the app's `anna.storage` Host API for the current Anna app context. The profile is for personalization, not an authentication credential.
 
 The app calls Anna's documented frontend Host API, `anna.llm.complete(...)`, directly from the UI. This avoids sending Unicode-rich document text through a Windows Python Executa subprocess, which caused character-encoding errors. The app needs the manifest grant `ui.host_api.llm: ["complete"]`; it does not require a separate Gemini API key or a bundled Executa.
 
@@ -34,9 +37,9 @@ From the repository root, use PowerShell:
     npm test
     python -m unittest discover -s tests -v
     anna-app validate --strict
-    anna-app dev --port 5181
+    anna-app dev --storage aps --port 5181
 
-Open the local URL printed by the CLI. Keep the terminal running while testing.
+Open the local URL printed by the CLI. Keep the terminal running while testing. The default local harness storage backend is in-memory, so use `--storage aps` while logged in when checking that profile/history survive a restart; the official Anna dev-kit notes document this real APS path.
 
 ## Local document handling
 
