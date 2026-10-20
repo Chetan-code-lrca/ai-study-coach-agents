@@ -89,6 +89,10 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn("trust: false", markdown)
         self.assertIn("math-display", self.css)
         self.assertIn(".markdown-result .katex", self.css)
+        self.assertIn(".markdown-table-wrap", self.css)
+        self.assertIn(".markdown-table th, .markdown-table td", self.css)
+        self.assertIn("function splitTableCells(line)", markdown)
+        self.assertIn("function renderMarkdownTable", markdown)
 
     def test_pdf_cleanup_uses_the_documented_loading_task_api(self) -> None:
         self.assertIn("const loadingTask = pdfjs.getDocument", self.javascript)
