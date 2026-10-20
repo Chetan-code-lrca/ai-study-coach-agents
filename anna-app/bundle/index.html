@@ -70,7 +70,7 @@
               <p class="status" id="plan-status" role="status" aria-live="polite"></p>
             </div>
             <article class="result-card field-wide" id="plan-result" hidden>
-              <div class="result-heading"><span class="result-kicker">YOUR PLAN</span><button type="button" class="text-button" data-copy="plan-result">Copy plan</button></div>
+              <div class="result-heading"><span class="result-kicker" id="plan-result-title">YOUR PLAN</span><button type="button" class="text-button" data-copy="plan-result">Copy plan</button></div>
               <div class="result-text markdown-result" id="plan-result-text"></div>
             </article>
           </form>
@@ -172,6 +172,16 @@
             <div class="history-section"><div class="result-heading"><h3>Recent quizzes</h3></div><div id="quiz-history" class="history-list"><p class="empty-state">No quiz attempts yet.</p></div></div>
             <p class="status" id="progress-status" role="status" aria-live="polite"></p>
           </div>
+          <section class="panel saved-quiz-review" id="saved-quiz-review" aria-label="Saved quiz answer review" hidden>
+            <div class="result-heading saved-review-heading">
+              <div>
+                <h3 id="saved-quiz-review-title">Quiz review</h3>
+                <p class="empty-state" id="saved-quiz-review-meta"></p>
+              </div>
+              <button type="button" class="button button-secondary" id="close-saved-quiz-review">Close review</button>
+            </div>
+            <div id="saved-quiz-review-content" class="saved-review-content"></div>
+          </section>
         </section>
 
         <section class="page" id="page-profile" role="tabpanel" hidden>
