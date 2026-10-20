@@ -17,6 +17,24 @@ This repository contains three related but distinct surfaces:
 Vercel's Python Functions are designed for HTTP function frameworks; they do not replace the managed Streamlit server workflow. The public Vercel home page links to the source and explains where the interactive Anna experience runs.
 
 
+## Sync and update the Anna-native app on Windows
+
+From a clean local clone of this repository, run the following from PowerShell at the repository root:
+
+    .\scripts\Update-AnnaApp.ps1
+
+The script checks for uncommitted changes, fast-forwards the local main branch from GitHub, rebuilds the Anna frontend, runs its tests, validates the manifest and Host API permissions, and checks generated JavaScript syntax. It will not discard local edits.
+
+After local checks pass, authenticate with Anna if needed and push the verified bundle as a working draft:
+
+    anna-app login --host https://anna.partners
+    .\scripts\Update-AnnaApp.ps1 -PushToAnna
+
+The current app version is **0.1.1**. A successful `anna-app apps push` updates the working draft; it does not itself publish an official release. In Anna Developer Console, install and test the draft, cut version `0.1.1`, and complete the platform's review/publish steps before treating it as released to users.
+
+
+
+
 ## What the current app does
 
 ### Study Plan

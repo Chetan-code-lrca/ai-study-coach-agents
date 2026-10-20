@@ -1,7 +1,7 @@
 {
   "slug": "ai-study-coach",
   "name": "AI Study Coach",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "tagline": "Personalized study planning, source-grounded learning, and quizzes.",
   "description": "An AI study companion that creates study plans, reads and summarizes local study documents, answers questions grounded in their text, and generates practice quizzes. Calls Anna's hosted LLM directly from the app UI; no provider-specific API key is stored by this app.",
   "category": "education"
