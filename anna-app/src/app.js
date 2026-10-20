@@ -3,6 +3,7 @@ import * as pdfjsLib from "pdfjs-dist/build/pdf.mjs";
 import mammoth from "mammoth";
 import { buildStudyRequest } from "./study-prompts.js";
 import { renderMarkdown } from "./markdown.js";
+import { prepareHistoryForStorage } from "./history-store.js";
 
 const STORAGE_KEY = "ai-study-coach:activity:v1";
 
@@ -148,28 +149,6 @@ async function loadActivity() {
   populateProfileForm();
   applyProfilePresentation();
   renderProgress();
-}
-
-function prepareHistoryForStorage(items, kind, maxItems, detailLimit = 6) {
-  const recent = items.slice(-maxItems);
-  const keepFrom = Math.max(0, recent.length - detailLimit);
-  return recent.map((item, index) => {
-    const record = { ...item };
-    const keepDetails = index >= keepFrom;
-    if (kind === "plan") {
-      if (!keepDetails) {
-        delete record.planText;
-        delete record.planTextTruncated;
-      } else if (typeof record.planText === "string" && record.planText.length > 14000) {
-        record.planText = record.planText.slice(0, 14000);
-        record.planTextTruncated = true;
-      }
-    } else if (kind === "quiz" && !keepDetails) {
-      delete record.questions;
-      delete record.answers;
-    }
-    return record;
-  });
 }
 
 async function saveActivity() {
