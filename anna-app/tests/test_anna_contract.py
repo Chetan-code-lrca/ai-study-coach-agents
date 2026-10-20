@@ -114,6 +114,23 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn('id="answer-btn"', self.html)
         self.assertIn('id="use-for-quiz-btn"', self.html)
 
+    def test_pdf_cleanup_uses_the_documented_loading_task_api(self) -> None:
+        self.assertIn("const loadingTask = pdfjs.getDocument", self.javascript)
+        self.assertIn("await loadingTask.destroy();", self.javascript)
+        self.assertNotIn("await pdf.destroy()", self.javascript)
+
+    def test_submitted_quiz_marks_wrong_and_correct_options_visibly(self) -> None:
+        self.assertIn('label.classList.add("quiz-option-incorrect")', self.javascript)
+        self.assertIn('label.classList.add("quiz-option-correct")', self.javascript)
+        self.assertIn(".quiz-option-incorrect { border-color:", self.css)
+        self.assertIn("background: #fff0ef", self.css)
+        self.assertIn(".quiz-option-correct { border-color:", self.css)
+
+    def test_base_text_and_interface_font_sizes_are_increased(self) -> None:
+        self.assertIn("body { margin: 0; background: var(--paper); color: var(--ink); font-size: 15px;", self.css)
+        self.assertIn("font-size: 13px; font-weight: 450;", self.css)
+        self.assertIn("font-size: clamp(25px, 4vw, 35px);", self.css)
+
     def test_frontend_displays_runtime_errors_and_loading_status(self) -> None:
         self.assertIn("Working with Anna's model", self.javascript)
         self.assertIn("setStatus(statusElement, getErrorMessage(error), \"error\")", self.javascript)
