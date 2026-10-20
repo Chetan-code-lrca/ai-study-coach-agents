@@ -73,7 +73,7 @@ test("renders Markdown tables as structured rows with formatting and math", () =
   assert.match(html, /<th class="table-align-right">Activity<\/th>/);
   assert.match(html, /<td class="table-align-center"><strong>Logic<\/strong><\/td>/);
   assert.match(html, /class="katex"/);
-  assert.match(html, /<td class="table-align-left">Sets<\/td>/);
+  assert.match(html, /<td class="table-align-center">Sets<\/td>/);
   assert.match(html, /Next section/);
 });
 
