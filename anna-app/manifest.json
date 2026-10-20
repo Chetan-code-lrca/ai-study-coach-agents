@@ -42,6 +42,9 @@
       }
     ],
     "host_api": {
+      "llm": [
+        "complete"
+      ],
       "storage": [
         "get",
         "set"
