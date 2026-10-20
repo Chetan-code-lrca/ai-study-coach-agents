@@ -9,7 +9,8 @@ This is the Anna-native version of the existing AI Study Coach project. The orig
 - Extract document text in the browser, review/edit it, and ask Anna to summarize it, explain concepts, or answer questions grounded in the source.
 - Generate multiple-choice quizzes from a topic or from the loaded study material.
 - Save a personal study profile (preferred name, course/year, primary goal, daily target, and focus areas) alongside activity history.
-- Score quiz attempts, show answer explanations, and save study-plan/quiz activity with Anna Storage.
+- Reopen complete plans from recent history and review the answers, correct answers, and explanations for recent quiz attempts.
+- Score quiz attempts, show answer explanations, and save study-plan/quiz activity with Anna Storage. Older history keeps summary metrics; full plan text and quiz-answer details are retained for the six most recent items of each type.
 - Render model answers as formatted Markdown, including inline and display LaTeX equations with locally bundled KaTeX.
 
 ## Architecture

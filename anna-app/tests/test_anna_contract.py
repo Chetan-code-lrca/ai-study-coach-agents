@@ -17,6 +17,7 @@ class AnnaContractTests(unittest.TestCase):
         cls.html = (APP_ROOT / "bundle" / "index.html").read_text(encoding="utf-8")
         cls.javascript = (APP_ROOT / "src" / "app.js").read_text(encoding="utf-8")
         cls.prompts = (APP_ROOT / "src" / "study-prompts.js").read_text(encoding="utf-8")
+        cls.history_store = (APP_ROOT / "src" / "history-store.js").read_text(encoding="utf-8")
         cls.bundle_javascript = (APP_ROOT / "bundle" / "app.js").read_text(encoding="utf-8")
         cls.css = (APP_ROOT / "bundle" / "style.css").read_text(encoding="utf-8")
 
@@ -151,11 +152,43 @@ class AnnaContractTests(unittest.TestCase):
     def test_existing_history_and_profile_share_the_same_storage_record(self) -> None:
         self.assertIn("if (Array.isArray(value.studyPlans)) state.studyPlans = value.studyPlans", self.javascript)
         self.assertIn("if (Array.isArray(value.quizHistory)) state.quizHistory = value.quizHistory", self.javascript)
-        self.assertIn("studyPlans: state.studyPlans.slice(-50)", self.javascript)
-        self.assertIn("quizHistory: state.quizHistory.slice(-100)", self.javascript)
+        self.assertIn('prepareHistoryForStorage(state.studyPlans, "plan", 50)', self.javascript)
+        self.assertIn('prepareHistoryForStorage(state.quizHistory, "quiz", 100)', self.javascript)
         self.assertIn("profile: state.profile", self.javascript)
         self.assertIn("await anna.storage.get({ key: STORAGE_KEY })", self.javascript)
         self.assertIn("await anna.storage.set({", self.javascript)
+
+    def test_recent_study_plans_can_be_reopened_in_full(self) -> None:
+        self.assertIn('id="plan-result-title"', self.html)
+        self.assertIn("planText: data.text", self.javascript)
+        self.assertIn("hoursPerDay: Number($(\"plan-hours\").value)", self.javascript)
+        self.assertIn("goals: $(\"plan-goals\").value.trim()", self.javascript)
+        self.assertIn("function openSavedPlan(item)", self.javascript)
+        self.assertIn("action.textContent = \"Open plan\"", self.javascript)
+        self.assertIn('showResult(\n    $(\"plan-result\")', self.javascript)
+        self.assertIn("item.planText", self.javascript)
+        self.assertIn("prepareHistoryForStorage", self.javascript)
+        self.assertIn("record.planText.length > 14000", self.history_store)
+
+    def test_quiz_history_saves_answers_and_can_review_them(self) -> None:
+        self.assertIn('id="saved-quiz-review"', self.html)
+        self.assertIn('id="saved-quiz-review-content"', self.html)
+        self.assertIn("questions: questions.map", self.javascript)
+        self.assertIn("answers: questions.map", self.javascript)
+        self.assertIn("function renderSavedQuizReview(attempt)", self.javascript)
+        self.assertIn('action.textContent = "Review"', self.javascript)
+        self.assertIn("attempt.answers[index]", self.javascript)
+        self.assertIn("question.correct_index", self.javascript)
+        self.assertIn("Your answer:", self.javascript)
+        self.assertIn("Correct answer:", self.javascript)
+        self.assertIn('action.textContent = "Score only"', self.javascript)
+
+    def test_history_storage_keeps_recent_details_and_compacts_older_records(self) -> None:
+        self.assertIn("items.slice(-maxItems)", self.history_store)
+        self.assertIn("index >= keepFrom", self.history_store)
+        self.assertIn('delete record.planText', self.history_store)
+        self.assertIn('delete record.questions', self.history_store)
+        self.assertIn('delete record.answers', self.history_store)
 
     def test_runtime_status_and_errors_remain_visible(self) -> None:
         self.assertIn("Working with Anna's model", self.javascript)
