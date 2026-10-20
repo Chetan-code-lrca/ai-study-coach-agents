@@ -27,6 +27,7 @@
         "name": "main",
         "title": "AI Study Coach",
         "default": true,
+        "entry": "index.html",
         "default_size": {
           "w": 900,
           "h": 760
@@ -46,8 +47,7 @@
         "set"
       ],
       "window": [
-        "set_title",
-        "ready"
+        "set_title"
       ]
     },
     "state_merge": "last_writer_wins"
