@@ -1,13 +1,8 @@
 import { AnnaAppRuntime } from "/static/anna-apps/_sdk/latest/index.js";
 import * as pdfjsLib from "pdfjs-dist/build/pdf.mjs";
 import mammoth from "mammoth";
+import { buildStudyRequest } from "./study-prompts.js";
 
-const EXECUTA_HANDLE = "study-coach";
-const EXECUTA_TOOL_ID =
-  (typeof window !== "undefined" &&
-    window.__ANNA_TOOL_IDS__ &&
-    window.__ANNA_TOOL_IDS__[EXECUTA_HANDLE]) ||
-  "tool-dev-ai-study-coach";
 const STORAGE_KEY = "ai-study-coach:activity:v1";
 
 const $ = (id) => document.getElementById(id);
@@ -47,24 +42,45 @@ function getErrorMessage(error) {
   return message;
 }
 
+function extractCompletionText(reply) {
+  const content = reply?.content ?? reply?.message?.content ?? reply?.data?.content;
+  if (typeof content === "string" && content.trim()) return content.trim();
+  if (content && !Array.isArray(content) && content.type === "text" &&
+      typeof content.text === "string" && content.text.trim()) {
+    return content.text.trim();
+  }
+  if (Array.isArray(content)) {
+    const combined = content
+      .filter((block) => block && block.type === "text" && typeof block.text === "string")
+      .map((block) => block.text)
+      .join("\\n")
+      .trim();
+    if (combined) return combined;
+  }
+  if (typeof reply?.text === "string" && reply.text.trim()) return reply.text.trim();
+  throw new Error("Anna returned an empty response. Please try again.");
+}
+
 async function invokeStudyCoach(action, payload) {
   if (!anna) throw new Error("Anna runtime is not connected. Open this app inside the Anna App Harness and retry.");
-  const result = await anna.tools.invoke({
-    tool_id: EXECUTA_TOOL_ID,
-    method: "study_coach",
-    args: { action, ...payload },
+  const request = buildStudyRequest(action, payload);
+  // Use the documented frontend-to-host LLM API directly. This keeps source
+  // text (including Unicode extracted from PDFs) out of a Windows Python
+  // Executa subprocess and its locale-dependent stdio encoding.
+  const reply = await anna.llm.complete({
+    messages: [
+      { role: "user", content: { type: "text", text: request.prompt } },
+    ],
+    systemPrompt: request.systemPrompt,
+    maxTokens: request.maxTokens,
+    temperature: 0.3,
   });
-  if (result?.success === false) {
-    throw new Error(result.error || "The study request failed.");
-  }
-  const data = result?.data && typeof result.data === "object" && typeof result.data.text === "string"
-    ? result.data
-    : result;
-  if (data?.success === false) throw new Error(data.error || "The study request failed.");
-  if (!data || typeof data.text !== "string" || !data.text.trim()) {
-    throw new Error("Anna returned an empty response. Please try again.");
-  }
-  return data;
+  return {
+    action,
+    text: extractCompletionText(reply),
+    model: reply?.model,
+    usage: reply?.usage,
+  };
 }
 
 async function loadActivity() {
