@@ -20,7 +20,9 @@
     "bundle": {
       "format": "static-spa",
       "entry": "index.html",
-      "external_origins": []
+      "external_origins": [
+        "https://cdn.jsdelivr.net"
+      ]
     },
     "views": [
       {
@@ -53,7 +55,22 @@
         "set_title"
       ]
     },
-    "state_merge": "last_writer_wins"
+    "state_merge": "last_writer_wins",
+    "csp_overrides": {
+      "script-src": [
+        "'self'",
+        "https://cdn.jsdelivr.net"
+      ],
+      "connect-src": [
+        "'self'",
+        "https://cdn.jsdelivr.net"
+      ],
+      "worker-src": [
+        "'self'",
+        "blob:",
+        "https://cdn.jsdelivr.net"
+      ]
+    }
   },
   "dev": {
     "fixtures": [
