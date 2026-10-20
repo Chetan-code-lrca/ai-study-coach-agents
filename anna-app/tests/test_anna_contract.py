@@ -101,7 +101,7 @@ class AnnaContractTests(unittest.TestCase):
 
     def test_document_text_is_loaded_before_only_explicit_ai_actions(self) -> None:
         self.assertIn("Files are extracted in your browser", self.html)
-        self.assertIn("Material is sent to Anna only when you request an action", self.html)
+        self.assertIn("text is sent to Anna only when you request an AI action", self.html)
         self.assertIn('id="summarize-btn"', self.html)
         self.assertIn('id="answer-btn"', self.html)
         self.assertIn('id="use-for-quiz-btn"', self.html)
