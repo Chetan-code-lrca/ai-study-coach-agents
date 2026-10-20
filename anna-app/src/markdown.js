@@ -15,8 +15,8 @@ function escapeHtml(value) {
 function inlineMarkdown(escaped) {
   return escaped
     .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/**([^*]+)**/g, "<strong>$1</strong>")
-    .replace(/*([^*]+)*/g, "<em>$1</em>");
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>");
 }
 
 export function renderMarkdown(markdown) {
