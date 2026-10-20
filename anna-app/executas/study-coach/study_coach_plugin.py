@@ -141,39 +141,38 @@ def _handle_initialize(request_id: Any, params: dict[str, Any]) -> dict[str, Any
 
 
 def _handle_invoke(request_id: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle invokes using Anna's documented JSON-RPC envelopes."""
     tool = params.get("tool")
     if tool != "study_coach":
-        return _response(request_id, result={"success": False, "error": f"Unknown tool: {tool}"})
+        return _response(request_id, error={"code": -32601, "message": f"Unknown tool: {tool}"})
 
     args = params.get("arguments") or {}
     if not isinstance(args, dict):
-        return _response(request_id, result={"success": False, "error": "Action arguments must be an object."})
+        return _response(request_id, error={"code": -32602, "message": "Invalid params: action arguments must be an object."})
 
     invoke_id = str(params.get("invoke_id") or "")
-    future = asyncio.run_coroutine_threadsafe(
-        _run_study_coach(args, invoke_id=invoke_id),
-        _loop,
-    )
     try:
-        data = future.result(timeout=110.0)
-        return _response(request_id, result={"success": True, "data": data})
-    except (ValueError, TypeError) as exc:
-        return _response(request_id, result={"success": False, "error": str(exc)})
-    except SamplingError as exc:
-        message = getattr(exc, "message", str(exc))
-        return _response(
-            request_id,
-            result={"success": False, "error": f"Anna LLM request failed: {message}"},
+        future = asyncio.run_coroutine_threadsafe(
+            _run_study_coach(args, invoke_id=invoke_id), _loop
         )
-    except Exception as exc:  # noqa: BLE001 - turn runtime failures into a readable app error
-        print(f"study_coach invoke failed: {exc}", file=sys.stderr, flush=True)
+        data = future.result(timeout=110.0)
+    except SamplingError as exc:
         return _response(
             request_id,
-            result={
-                "success": False,
-                "error": "The study request failed. Check Anna sampling permission and try again.",
+            error={
+                "code": getattr(exc, "code", -32603),
+                "message": f"Anna LLM request failed: {getattr(exc, 'message', str(exc))}",
+                "data": getattr(exc, "data", None),
             },
         )
+    except (ValueError, TypeError) as exc:
+        return _response(request_id, error={"code": -32602, "message": f"Invalid params: {exc}"})
+    except Exception as exc:  # noqa: BLE001
+        print(f"study_coach invoke failed: {exc}", file=sys.stderr, flush=True)
+        return _response(request_id, error={"code": -32603, "message": f"Study Coach request failed: {exc}"})
+
+    # Anna unwraps an Executa result using the explicit tool field.
+    return _response(request_id, result={"success": True, "tool": tool, "data": data})
 
 
 def _handle_message(raw: str) -> None:
@@ -224,6 +223,7 @@ _loop_thread.start()
 
 def main() -> None:
     """Serve JSON-RPC messages on stdio for the lifetime of the Executa."""
+    print("AI Study Coach Executa started", file=sys.stderr, flush=True)
     with ThreadPoolExecutor(max_workers=4, thread_name_prefix="study-coach-invoke") as pool:
         try:
             for raw in sys.stdin:
