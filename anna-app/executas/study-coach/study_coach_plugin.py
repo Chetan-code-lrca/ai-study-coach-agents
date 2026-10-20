@@ -65,12 +65,15 @@ _stdout_lock = threading.Lock()
 
 
 def _write_frame(message: dict[str, Any]) -> None:
-    """Write one JSON-RPC frame to stdout; diagnostics must use stderr."""
-    payload = json.dumps(message, ensure_ascii=False, separators=(",", ":"))
+    """Write one JSON-RPC frame safely even when Windows stdout uses a legacy code page.
+
+    Escaping non-ASCII characters keeps the wire representation ASCII-only.
+    JSON consumers decode the escapes back to the original Unicode text.
+    """
+    payload = json.dumps(message, ensure_ascii=True, separators=(",", ":"))
     with _stdout_lock:
         sys.stdout.write(payload + "\n")
         sys.stdout.flush()
-
 
 sampling = SamplingClient(write_frame=_write_frame)
 
