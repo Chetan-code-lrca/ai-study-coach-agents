@@ -54,7 +54,7 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn('"host_capabilities": ["llm.sample"]', self.plugin)
         host_api = self.manifest["ui"]["host_api"]
         self.assertEqual(host_api["storage"], ["get", "set"])
-        self.assertEqual(host_api["window"], ["set_title", "ready"])
+        self.assertEqual(host_api["window"], ["set_title"])
         self.assertNotIn("llm", host_api)
         self.assertNotIn("tools", host_api)
 
