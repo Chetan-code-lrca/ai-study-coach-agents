@@ -1,13 +1,9 @@
 import { AnnaAppRuntime } from "/static/anna-apps/_sdk/latest/index.js";
 import * as pdfjsLib from "pdfjs-dist/build/pdf.mjs";
 import mammoth from "mammoth";
+import { buildStudyRequest } from "./study-prompts.js";
+import { renderMarkdown } from "./markdown.js";
 
-const EXECUTA_HANDLE = "study-coach";
-const EXECUTA_TOOL_ID =
-  (typeof window !== "undefined" &&
-    window.__ANNA_TOOL_IDS__ &&
-    window.__ANNA_TOOL_IDS__[EXECUTA_HANDLE]) ||
-  "tool-dev-ai-study-coach";
 const STORAGE_KEY = "ai-study-coach:activity:v1";
 
 const $ = (id) => document.getElementById(id);
@@ -38,33 +34,57 @@ function showToast(message) {
 
 function getErrorMessage(error) {
   const message = error?.message || String(error || "Unknown error");
-  if (/SAMPLING_NOT_GRANTED|SAMPLING_NOT_NEGOTIATED|NOT_NEGOTIATED/i.test(message)) {
-    return "Anna LLM sampling is not enabled for this Executa yet. Check the app/Executa sampling permissions in Anna, then try again.";
+  if (/manifest does not grant.*llm\.complete/i.test(message)) {
+    return "Anna denied direct LLM access. Confirm ui.host_api.llm includes \"complete\" in manifest.json, then restart the app.";
   }
   if (/timeout|timed out/i.test(message)) {
-    return "The request took too long. Try again with shorter notes or a smaller request.";
+    return "Anna's model request timed out. Try again, or shorten the study material if the error persists.";
+  }
+  if (/context length|too many tokens|prompt.{0,20}too long/i.test(message)) {
+    return "This request is too large for the selected model. Clear some material or summarize a shorter section first.";
   }
   return message;
 }
 
-async function invokeStudyCoach(action, payload) {
+function extractCompletionText(reply) {
+  const content = reply?.content ?? reply?.message?.content ?? reply?.data?.content;
+  if (typeof content === "string" && content.trim()) return content.trim();
+  if (content && !Array.isArray(content) && content.type === "text" &&
+      typeof content.text === "string" && content.text.trim()) {
+    return content.text.trim();
+  }
+  if (Array.isArray(content)) {
+    const combined = content
+      .filter((block) => block && block.type === "text" && typeof block.text === "string")
+      .map((block) => block.text)
+      .join("\\n")
+      .trim();
+    if (combined) return combined;
+  }
+  if (typeof reply?.text === "string" && reply.text.trim()) return reply.text.trim();
+  throw new Error("Anna returned an empty response. Please try again.");
+}
+
+async function completeStudyAction(action, payload) {
   if (!anna) throw new Error("Anna runtime is not connected. Open this app inside the Anna App Harness and retry.");
-  const result = await anna.tools.invoke({
-    tool_id: EXECUTA_TOOL_ID,
-    method: "study_coach",
-    args: { action, ...payload },
+  const request = buildStudyRequest(action, payload);
+  // Use the documented frontend-to-host LLM API directly. This keeps source
+  // text (including Unicode extracted from PDFs) out of a Windows Python
+  // Executa subprocess and its locale-dependent stdio encoding.
+  const reply = await anna.llm.complete({
+    messages: [
+      { role: "user", content: { type: "text", text: request.prompt } },
+    ],
+    systemPrompt: request.systemPrompt,
+    maxTokens: request.maxTokens,
+    temperature: 0.3,
   });
-  if (result?.success === false) {
-    throw new Error(result.error || "The study request failed.");
-  }
-  const data = result?.data && typeof result.data === "object" && typeof result.data.text === "string"
-    ? result.data
-    : result;
-  if (data?.success === false) throw new Error(data.error || "The study request failed.");
-  if (!data || typeof data.text !== "string" || !data.text.trim()) {
-    throw new Error("Anna returned an empty response. Please try again.");
-  }
-  return data;
+  return {
+    action,
+    text: extractCompletionText(reply),
+    model: reply?.model,
+    usage: reply?.usage,
+  };
 }
 
 async function loadActivity() {
@@ -106,7 +126,7 @@ async function runAction(button, statusElement, action, payload) {
   button.setAttribute("aria-busy", "true");
   setStatus(statusElement, "Working with Anna's model…");
   try {
-    const data = await invokeStudyCoach(action, payload);
+    const data = await completeStudyAction(action, payload);
     setStatus(statusElement, "Done.", "success");
     return data;
   } catch (error) {
@@ -121,7 +141,7 @@ async function runAction(button, statusElement, action, payload) {
 
 function showResult(card, textElement, titleElement, title, text) {
   if (titleElement) titleElement.textContent = title;
-  textElement.textContent = text;
+  textElement.innerHTML = renderMarkdown(text);
   card.hidden = false;
 }
 
@@ -617,7 +637,7 @@ $("quiz-form").addEventListener("submit", async (event) => {
 document.querySelectorAll("[data-copy]").forEach((button) => {
   button.addEventListener("click", async () => {
     const target = $(button.dataset.copy);
-    const text = target?.querySelector(".result-text")?.textContent || target?.textContent || "";
+    const text = target?.querySelector(".result-text")?.innerText || target?.innerText || target?.textContent || "";
     if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
