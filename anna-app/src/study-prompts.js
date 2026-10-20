@@ -177,14 +177,12 @@ export function buildStudyRequest(action, args = {}) {
       "Return valid JSON only with this exact shape:",
       '{"title":"string","questions":[{"question":"string","options":["A","B","C","D"],"correct_index":0,"explanation":"string"}]}',
       `correct_index must be an integer from 0 to 3. Return exactly ${count} questions. Include a concise explanation for every answer. Do not use Markdown fences.`,
-      source ? "" : "",
       source ? referenceMaterial(source) : "",
     ].filter(Boolean).join("\n");
     return {
       systemPrompt: STUDY_SYSTEM_PROMPT,
       maxTokens: count >= 8 ? 4000 : 3000,
       prompt,
-      responseFormat: { type: "json_object" },
     };
   }
 
