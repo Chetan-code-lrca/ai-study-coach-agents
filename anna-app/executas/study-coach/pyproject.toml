@@ -10,6 +10,11 @@ dependencies = [
 [project.scripts]
 tool-dev-ai-study-coach = "study_coach_plugin:main"
 
+# The official SDK currently lives in Anna's public Executa examples repository.
+# Pin the source revision so local and CI runs install the same protocol implementation.
+[tool.uv.sources]
+executa-sdk = { git = "https://github.com/whtcjdtc2007/anna-executa-examples", subdirectory = "sdk/python", rev = "6325e4c44f9a43d756a40eb20df32918610483bb" }
+
 [tool.hatch.build.targets.wheel]
 packages = ["."]
 only-include = ["study_coach_plugin.py", "study_logic.py"]

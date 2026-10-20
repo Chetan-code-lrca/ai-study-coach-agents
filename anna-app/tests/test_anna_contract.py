@@ -19,6 +19,7 @@ class AnnaContractTests(unittest.TestCase):
         cls.pyproject = tomllib.loads((TOOL_DIR / "pyproject.toml").read_text(encoding="utf-8"))
         cls.html = (APP_ROOT / "bundle" / "index.html").read_text(encoding="utf-8")
         cls.javascript = (APP_ROOT / "bundle" / "app.js").read_text(encoding="utf-8")
+        cls.css = (APP_ROOT / "bundle" / "style.css").read_text(encoding="utf-8")
         cls.plugin = (TOOL_DIR / "study_coach_plugin.py").read_text(encoding="utf-8")
 
     def test_bundled_executa_path_and_manifest_reference_match(self) -> None:
@@ -57,6 +58,26 @@ class AnnaContractTests(unittest.TestCase):
         self.assertEqual(host_api["window"], ["set_title"])
         self.assertNotIn("llm", host_api)
         self.assertNotIn("tools", host_api)
+
+
+    def test_form_selects_have_native_options_and_compact_styles(self) -> None:
+        for control_id in (
+            "plan-level",
+            "plan-weeks",
+            "plan-hours",
+            "quiz-difficulty",
+            "quiz-count",
+        ):
+            self.assertIn(f'id="{control_id}"', self.html)
+        self.assertIn("appearance: none", self.css)
+        self.assertIn("cursor: pointer", self.css)
+        self.assertIn("overflow-y: hidden", self.css)
+        self.assertIn("@media (max-width: 760px)", self.css)
+
+    def test_frontend_displays_runtime_errors_and_loading_status(self) -> None:
+        self.assertIn("Working with Anna's model", self.javascript)
+        self.assertIn("setStatus(statusElement, getErrorMessage(error), \"error\")", self.javascript)
+        self.assertIn('role="status"', self.html)
 
     def test_frontend_does_not_require_a_provider_api_key(self) -> None:
         self.assertNotIn("GOOGLE_API_KEY", self.javascript)
