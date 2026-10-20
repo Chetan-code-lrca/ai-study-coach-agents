@@ -2,6 +2,7 @@ import { AnnaAppRuntime } from "/static/anna-apps/_sdk/latest/index.js";
 import * as pdfjsLib from "pdfjs-dist/build/pdf.mjs";
 import mammoth from "mammoth";
 import { buildStudyRequest } from "./study-prompts.js";
+import { renderMarkdown } from "./markdown.js";
 
 const STORAGE_KEY = "ai-study-coach:activity:v1";
 
@@ -137,7 +138,7 @@ async function runAction(button, statusElement, action, payload) {
 
 function showResult(card, textElement, titleElement, title, text) {
   if (titleElement) titleElement.textContent = title;
-  textElement.textContent = text;
+  textElement.innerHTML = renderMarkdown(text);
   card.hidden = false;
 }
 
@@ -633,7 +634,7 @@ $("quiz-form").addEventListener("submit", async (event) => {
 document.querySelectorAll("[data-copy]").forEach((button) => {
   button.addEventListener("click", async () => {
     const target = $(button.dataset.copy);
-    const text = target?.querySelector(".result-text")?.textContent || target?.textContent || "";
+    const text = target?.querySelector(".result-text")?.innerText || target?.innerText || target?.textContent || "";
     if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
