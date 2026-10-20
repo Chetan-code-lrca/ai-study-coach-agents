@@ -65,7 +65,7 @@ test("shows invalid LaTeX without breaking the rest of the answer", () => {
 
 
 test("renders Markdown tables as structured rows with formatting and math", () => {
-  const source = "| Day | Topic | Activity |\n| --- | :---: | ---: |\n| 1 | **Logic** | Review $\bar{x}$ |\n| 2 | Sets | Use truth tables |\n\nNext section.";
+  const source = "| Day | Topic | Activity |\n| --- | :---: | ---: |\n| 1 | **Logic** | Review $\\bar{x}$ |\n| 2 | Sets | Use truth tables |\n\nNext section.";
   const html = renderMarkdown(source);
   assert.match(html, /<table class="markdown-table">/);
   assert.match(html, /<th class="table-align-left">Day<\/th>/);
