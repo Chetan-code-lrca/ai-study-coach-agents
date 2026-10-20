@@ -1,0 +1,19 @@
+[project]
+name = "tool-dev-ai-study-coach"
+version = "0.1.0"
+description = "AI Study Coach Anna Executa using the host LLM through reverse sampling."
+requires-python = ">=3.10"
+dependencies = [
+    "executa-sdk>=0.1.0",
+]
+
+[project.scripts]
+tool-dev-ai-study-coach = "study_coach_plugin:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+only-include = ["study_coach_plugin.py", "study_logic.py"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
