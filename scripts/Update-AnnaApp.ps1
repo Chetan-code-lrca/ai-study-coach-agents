@@ -32,7 +32,7 @@ try {
         throw "Local changes are present. Commit or stash them first; this script will not overwrite them."
     }
 
-    Write-Host "`n[1/7] Updating local main from GitHub..."
+    Write-Host "`n[1/8] Updating local main from GitHub..."
     Invoke-Checked "git" @("fetch", "origin", "main")
     $branch = (& git branch --show-current).Trim()
     if ($LASTEXITCODE -ne 0) {
@@ -64,15 +64,24 @@ try {
 
     Push-Location (Join-Path $repoRoot "anna-app")
     try {
-        Write-Host "`n[2/7] Installing app dependencies..."
+        Write-Host "`n[2/8] Installing app dependencies..."
         Invoke-Checked "npm" @("install", "--no-audit", "--no-fund")
-        Write-Host "`n[3/7] Building the Anna frontend bundle..."
+        Write-Host "`n[3/8] Building the Anna frontend bundle..."
         Invoke-Checked "npm" @("run", "build")
-        Write-Host "`n[4/7] Running frontend tests..."
+        Write-Host "`n[4/8] Running frontend tests..."
         Invoke-Checked "npm" @("test")
-        Write-Host "`n[5/7] Validating manifest and Host API permissions..."
+
+        Write-Host "`n[5/8] Running Anna manifest and frontend contract tests..."
+        if (Get-Command "python" -ErrorAction SilentlyContinue) {
+            Invoke-Checked "python" @("-m", "unittest", "discover", "-s", "tests", "-v")
+        } elseif (Get-Command "py" -ErrorAction SilentlyContinue) {
+            Invoke-Checked "py" @("-3.11", "-m", "unittest", "discover", "-s", "tests", "-v")
+        } else {
+            throw "Python 3.11 or newer was not found. Install Python, reopen PowerShell, and rerun."
+        }
+        Write-Host "`n[6/8] Validating manifest and Host API permissions..."
         Invoke-Checked "anna-app" @("validate", "--strict")
-        Write-Host "`n[6/7] Checking generated JavaScript syntax..."
+        Write-Host "`n[7/8] Checking generated JavaScript syntax..."
         Invoke-Checked "node" @("--check", "bundle/app.js")
 
         if ($PushToAnna) {
@@ -81,7 +90,7 @@ try {
             if ($LASTEXITCODE -ne 0) {
                 throw "Anna CLI is not logged in. Run 'anna-app login --host https://anna.partners' and rerun with -PushToAnna."
             }
-            Write-Host "`n[7/7] Pushing the validated bundle to Anna's working draft..."
+            Write-Host "`n[8/8] Pushing the validated bundle to Anna's working draft..."
             Invoke-Checked "anna-app" @("apps", "push")
             Write-Host "`nAnna working draft updated. This is not a public release."
             Write-Host "Open https://anna.partners/developer, install/test the draft, then cut version 0.1.1 and complete the platform review/publish steps."
