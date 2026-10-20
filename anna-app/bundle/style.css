@@ -146,3 +146,23 @@ input::placeholder, textarea::placeholder { color: #9aa79e; }
 .quiz-option-correct input { accent-color: #25834b; }
 .quiz-option-incorrect { border-color: #e5aaa6; background: #fff0ef; color: #9e302a; }
 .quiz-option-incorrect input { accent-color: #c73731; }
+
+
+/* Math typesetting inside AI responses */
+.markdown-result .math-inline { white-space: normal; }
+.markdown-result .math-display {
+  display: block;
+  max-width: 100%;
+  margin: 14px 0;
+  padding: 5px 0 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
+}
+.markdown-result .katex { font-size: 1.08em; }
+.markdown-result .katex-display { margin: 0; }
+.markdown-result .katex-error { color: #a33f37; white-space: normal; }
+@media (max-width: 600px) {
+  .markdown-result .katex { font-size: 1em; }
+  .markdown-result .math-display { text-align: left; }
+}
