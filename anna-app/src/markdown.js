@@ -1,7 +1,9 @@
+import katex from "katex";
+
 /**
- * Render the small Markdown subset used by model answers.
- * Source text is HTML-escaped before any markup is added, so model output
- * cannot inject arbitrary HTML or scripts into the app window.
+ * Render the Markdown subset used by model answers, including TeX math.
+ * Ordinary text is HTML-escaped before markup is introduced. Math passes
+ * through KaTeX with trust disabled and error recovery enabled.
  */
 function escapeHtml(value) {
   return String(value).replace(/[&<>"]/g, (character) => ({
@@ -12,6 +14,77 @@ function escapeHtml(value) {
   })[character]);
 }
 
+function protectMathExpressions(text, expressions) {
+  const patterns = [
+    { regex: /\$\$([\s\S]+?)\$\$/g, display: true },
+    { regex: /\\\[([\s\S]+?)\\\]/g, display: true },
+    { regex: /\\\(([\s\S]+?)\\\)/g, display: false },
+    { regex: /\$([^\n$]+?)\$/g, display: false },
+  ];
+  let protectedText = text;
+  for (const { regex, display } of patterns) {
+    protectedText = protectedText.replace(regex, (_match, expression) => {
+      const index = expressions.length;
+      expressions.push({ expression: expression.trim(), display });
+      return `KATEXMATH${index}TOKEN`;
+    });
+  }
+  return protectedText;
+}
+
+function protectMathOutsideCode(markdown) {
+  const expressions = [];
+  const output = [];
+  let normalLines = [];
+  let inCode = false;
+
+  const flushNormalText = () => {
+    if (!normalLines.length) return;
+    output.push(protectMathExpressions(normalLines.join("\n"), expressions));
+    normalLines = [];
+  };
+
+  for (const line of String(markdown).replace(/\r\n?/g, "\n").split("\n")) {
+    if (line.trim().startsWith("```")) {
+      flushNormalText();
+      output.push(line);
+      inCode = !inCode;
+    } else if (inCode) {
+      output.push(line);
+    } else {
+      normalLines.push(line);
+    }
+  }
+  flushNormalText();
+  return { text: output.join("\n"), expressions };
+}
+
+function renderMath(expression, display) {
+  const rendered = katex.renderToString(expression, {
+    displayMode: display,
+    throwOnError: false,
+    trust: false,
+  });
+  return display
+    ? `<div class="math-display">${rendered}</div>`
+    : `<span class="math-inline">${rendered}</span>`;
+}
+
+function restoreMath(html, expressions) {
+  // A block equation by itself should not be nested inside a paragraph.
+  html = html.replace(/<p>\s*KATEXMATH(\d+)TOKEN\s*<\/p>/g, (paragraph, index) => {
+    const item = expressions[Number(index)];
+    if (!item) return paragraph;
+    return item.display
+      ? renderMath(item.expression, true)
+      : `<p>${renderMath(item.expression, false)}</p>`;
+  });
+  return html.replace(/KATEXMATH(\d+)TOKEN/g, (token, index) => {
+    const item = expressions[Number(index)];
+    return item ? renderMath(item.expression, item.display) : token;
+  });
+}
+
 function inlineMarkdown(escaped) {
   return escaped
     .replace(/`([^`]+)`/g, "<code>$1</code>")
@@ -20,7 +93,8 @@ function inlineMarkdown(escaped) {
 }
 
 export function renderMarkdown(markdown) {
-  const lines = escapeHtml(markdown).replace(/\r\n?/g, "\n").split("\n");
+  const protectedContent = protectMathOutsideCode(markdown);
+  const lines = escapeHtml(protectedContent.text).split("\n");
   const output = [];
   let paragraph = [];
   let listType = null;
@@ -107,5 +181,5 @@ export function renderMarkdown(markdown) {
   flushParagraph();
   closeList();
   if (inCode) output.push(`<pre><code>${codeLines.join("\n")}</code></pre>`);
-  return output.join("\n");
+  return restoreMath(output.join("\n"), protectedContent.expressions);
 }

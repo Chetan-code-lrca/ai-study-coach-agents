@@ -1,4 +1,4 @@
-import { copyFile, mkdir } from "node:fs/promises";
+import { copyFile, cp, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
@@ -26,4 +26,14 @@ await copyFile(
   path.join(bundleDir, "pdf.worker.min.mjs"),
 );
 
-console.log("Built bundle/app.js and copied bundle/pdf.worker.min.mjs.");
+await copyFile(
+  path.join(appRoot, "node_modules", "katex", "dist", "katex.min.css"),
+  path.join(bundleDir, "katex.min.css"),
+);
+await cp(
+  path.join(appRoot, "node_modules", "katex", "dist", "fonts"),
+  path.join(bundleDir, "fonts"),
+  { recursive: true },
+);
+
+console.log("Built bundle/app.js, PDF worker, KaTeX stylesheet, and math fonts.");

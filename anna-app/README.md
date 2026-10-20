@@ -9,7 +9,7 @@ This is the Anna-native version of the existing AI Study Coach project. The orig
 - Extract document text in the browser, review/edit it, and ask Anna to summarize it, explain concepts, or answer questions grounded in the source.
 - Generate multiple-choice quizzes from a topic or from the loaded study material.
 - Score quiz attempts, show answer explanations, and save study-plan/quiz activity with Anna Storage.
-- Render model answers as formatted Markdown.
+- Render model answers as formatted Markdown, including inline and display LaTeX equations with locally bundled KaTeX.
 
 ## Architecture
 
@@ -44,8 +44,8 @@ Open the local URL printed by the CLI. Keep the terminal running while testing.
 - File bytes are not uploaded for extraction. Extracted text is sent to Anna only when an AI action is requested.
 - Maximum file size: 10 MB per file. Maximum combined study material: 30,000 characters.
 - Scanned/image-only PDFs are not supported because OCR is not included.
-- An internet connection is needed during `npm install`; parsing after the build does not require a third-party CDN.
+- An internet connection is needed during `npm install`; PDF/DOCX parsing and equation rendering after the build use locally bundled assets and do not require a third-party CDN.
 
 ## Automated checks and limits
 
-GitHub Actions builds the self-contained frontend bundle, runs prompt/Markdown tests, verifies Anna manifest and frontend contracts, checks JavaScript syntax, and runs the existing Streamlit regression workflow. These automated tests cannot replace a live request against your signed-in Anna account or testing with your own PDFs/DOCX files.
+GitHub Actions builds the self-contained frontend bundle (including PDF.js worker and KaTeX stylesheet/fonts), runs prompt/Markdown/math tests, verifies Anna manifest and frontend contracts, checks JavaScript syntax, and runs the existing Streamlit regression workflow. These automated tests cannot replace a live request against your signed-in Anna account or testing with your own PDFs/DOCX files.
