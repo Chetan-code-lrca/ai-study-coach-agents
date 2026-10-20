@@ -41,6 +41,12 @@ jobs:
       - name: Install Anna CLI
         run: npm install --global @anna-ai/cli
 
+      - name: Build the self-contained frontend bundle
+        working-directory: anna-app
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
       - name: Validate Anna App manifest and bundle
         working-directory: anna-app
         run: anna-app validate --strict

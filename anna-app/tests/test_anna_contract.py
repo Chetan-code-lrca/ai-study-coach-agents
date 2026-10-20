@@ -17,8 +17,11 @@ class AnnaContractTests(unittest.TestCase):
         cls.manifest = json.loads((APP_ROOT / "manifest.json").read_text(encoding="utf-8"))
         cls.executa = json.loads((TOOL_DIR / "executa.json").read_text(encoding="utf-8"))
         cls.pyproject = tomllib.loads((TOOL_DIR / "pyproject.toml").read_text(encoding="utf-8"))
+        cls.package = json.loads((APP_ROOT / "package.json").read_text(encoding="utf-8"))
+        cls.build_script = (APP_ROOT / "scripts" / "build.mjs").read_text(encoding="utf-8")
         cls.html = (APP_ROOT / "bundle" / "index.html").read_text(encoding="utf-8")
-        cls.javascript = (APP_ROOT / "bundle" / "app.js").read_text(encoding="utf-8")
+        cls.javascript = (APP_ROOT / "src" / "app.js").read_text(encoding="utf-8")
+        cls.bundle_javascript = (APP_ROOT / "bundle" / "app.js").read_text(encoding="utf-8")
         cls.css = (APP_ROOT / "bundle" / "style.css").read_text(encoding="utf-8")
         cls.plugin = (TOOL_DIR / "study_coach_plugin.py").read_text(encoding="utf-8")
 
@@ -60,6 +63,7 @@ class AnnaContractTests(unittest.TestCase):
         # in addition to the Executa's llm.sample capability.
         self.assertEqual(host_api["llm"], ["complete"])
         self.assertNotIn("tools", host_api)
+        self.assertEqual(host_api["llm"], ["complete"])
 
 
     def test_form_selects_have_native_options_and_compact_styles(self) -> None:
@@ -75,6 +79,40 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn("cursor: pointer", self.css)
         self.assertIn("overflow-y: hidden", self.css)
         self.assertIn("@media (max-width: 760px)", self.css)
+
+
+    def test_local_file_drop_zone_supports_source_project_document_types(self) -> None:
+        self.assertIn('id="file-drop-zone"', self.html)
+        self.assertIn('id="file-input"', self.html)
+        self.assertIn('id="choose-files-btn"', self.html)
+        self.assertIn('id="use-for-quiz-btn"', self.html)
+        for extension in ("pdf", "docx", "txt", "md", "csv", "json"):
+            self.assertIn(f'"{extension}"', self.javascript)
+        self.assertIn("extractPdfText(file)", self.javascript)
+        self.assertIn("mammoth.extractRawText", self.javascript)
+        self.assertIn("MAX_FILE_BYTES = 10 * 1024 * 1024", self.javascript)
+        self.assertIn("MAX_MATERIAL_CHARS = 30000", self.javascript)
+
+    def test_document_parsers_are_pinned_and_bundled_locally(self) -> None:
+        bundle = self.manifest["ui"]["bundle"]
+        self.assertEqual(bundle["external_origins"], [])
+        self.assertNotIn("csp_overrides", self.manifest["ui"])
+        self.assertEqual(self.package["dependencies"]["pdfjs-dist"], "6.4.299")
+        self.assertEqual(self.package["dependencies"]["mammoth"], "1.13.0")
+        self.assertEqual(self.package["devDependencies"]["esbuild"], "0.28.2")
+        self.assertIn('from "pdfjs-dist/build/pdf.mjs"', self.javascript)
+        self.assertIn('from "mammoth"', self.javascript)
+        self.assertIn('new URL("./pdf.worker.min.mjs", import.meta.url)', self.javascript)
+        self.assertIn('"pdf.worker.min.mjs"', self.build_script)
+        self.assertTrue((APP_ROOT / "bundle" / "pdf.worker.min.mjs").is_file())
+        self.assertIn("/static/anna-apps/_sdk/latest/index.js", self.bundle_javascript)
+
+    def test_document_text_is_loaded_before_only_explicit_ai_actions(self) -> None:
+        self.assertIn("Files are extracted in your browser", self.html)
+        self.assertIn("text is sent to Anna only when you request an AI action", self.html)
+        self.assertIn('id="summarize-btn"', self.html)
+        self.assertIn('id="answer-btn"', self.html)
+        self.assertIn('id="use-for-quiz-btn"', self.html)
 
     def test_frontend_displays_runtime_errors_and_loading_status(self) -> None:
         self.assertIn("Working with Anna's model", self.javascript)

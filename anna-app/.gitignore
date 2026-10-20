@@ -1,0 +1,4 @@
+node_modules/
+package-lock.json
+bundle/app.js
+bundle/pdf.worker.min.mjs
