@@ -44,5 +44,10 @@ jobs:
         working-directory: anna-app
         run: python -m unittest discover -s tests -v
 
+      - name: Check app JavaScript syntax
+        run: |
+          cp anna-app/bundle/app.js /tmp/anna-study-coach.mjs
+          node --check /tmp/anna-study-coach.mjs
+
       - name: Compile the Executa sources
         run: python -m py_compile anna-app/executas/study-coach/study_logic.py anna-app/executas/study-coach/study_coach_plugin.py
