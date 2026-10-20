@@ -150,14 +150,38 @@ async function loadActivity() {
   renderProgress();
 }
 
+function prepareHistoryForStorage(items, kind, maxItems, detailLimit = 6) {
+  const recent = items.slice(-maxItems);
+  const keepFrom = Math.max(0, recent.length - detailLimit);
+  return recent.map((item, index) => {
+    const record = { ...item };
+    const keepDetails = index >= keepFrom;
+    if (kind === "plan") {
+      if (!keepDetails) {
+        delete record.planText;
+        delete record.planTextTruncated;
+      } else if (typeof record.planText === "string" && record.planText.length > 14000) {
+        record.planText = record.planText.slice(0, 14000);
+        record.planTextTruncated = true;
+      }
+    } else if (kind === "quiz" && !keepDetails) {
+      delete record.questions;
+      delete record.answers;
+    }
+    return record;
+  });
+}
+
 async function saveActivity() {
   try {
     await anna.storage.set({
       key: STORAGE_KEY,
       value: {
         profile: state.profile,
-        studyPlans: state.studyPlans.slice(-50),
-        quizHistory: state.quizHistory.slice(-100),
+        // Keep summaries for a longer history, but retain full details only for
+        // the six most recent plans and quizzes to keep the single APS value lean.
+        studyPlans: prepareHistoryForStorage(state.studyPlans, "plan", 50),
+        quizHistory: prepareHistoryForStorage(state.quizHistory, "quiz", 100),
       },
     });
     return true;
@@ -194,6 +218,77 @@ function showResult(card, textElement, titleElement, title, text) {
   card.hidden = false;
 }
 
+function openSavedPlan(item) {
+  if (!item || typeof item.planText !== "string" || !item.planText.trim()) {
+    showToast("This older plan has summary details only. Newly generated plans can be reopened in full.");
+    return;
+  }
+  setActivePage("plan");
+  $("plan-subject").value = item.subject || "";
+  $("plan-level").value = item.level || "Intermediate";
+  $("plan-weeks").value = String(item.weeks || 4);
+  if (item.hoursPerDay) $("plan-hours").value = String(item.hoursPerDay);
+  $("plan-goals").value = item.goals || "";
+  showResult(
+    $("plan-result"),
+    $("plan-result-text"),
+    $("plan-result-title"),
+    item.planTextTruncated ? "SAVED PLAN (PREVIEW)" : "SAVED STUDY PLAN",
+    item.planText,
+  );
+  if (item.planTextTruncated) {
+    showToast("This saved plan was shortened to fit the storage limit.");
+  }
+  $("plan-result").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderSavedQuizReview(attempt) {
+  const panel = $("saved-quiz-review");
+  const content = $("saved-quiz-review-content");
+  content.replaceChildren();
+  if (!Array.isArray(attempt?.questions) || !Array.isArray(attempt?.answers)) {
+    panel.hidden = true;
+    showToast("This attempt has a saved score only. New quiz attempts include full answer review.");
+    return;
+  }
+
+  $("saved-quiz-review-title").textContent = attempt.title || attempt.topic || "Quiz review";
+  $("saved-quiz-review-meta").textContent =
+    `${attempt.score}/${attempt.total} correct · ${formatDate(attempt.createdAt)}`;
+  attempt.questions.forEach((question, index) => {
+    const card = document.createElement("article");
+    card.className = "quiz-card saved-review-question";
+
+    const prompt = document.createElement("p");
+    prompt.className = "quiz-question";
+    prompt.textContent = `${index + 1}. ${question.question}`;
+    card.append(prompt);
+
+    const selectedIndex = Number.isInteger(attempt.answers[index]) ? attempt.answers[index] : null;
+    question.options.forEach((option, optionIndex) => {
+      const optionRow = document.createElement("div");
+      optionRow.className = "quiz-option";
+      if (optionIndex === question.correct_index) {
+        optionRow.classList.add("quiz-option-correct");
+      } else if (selectedIndex === optionIndex) {
+        optionRow.classList.add("quiz-option-incorrect");
+      }
+      optionRow.textContent = `${optionIndex === question.correct_index ? "✓ Correct answer: " : selectedIndex === optionIndex ? "✗ Your answer: " : ""}${option}`;
+      card.append(optionRow);
+    });
+
+    const response = document.createElement("p");
+    response.className = "quiz-explanation";
+    const selectedText = selectedIndex === null ? "Not answered" : question.options[selectedIndex];
+    const correctText = question.options[question.correct_index];
+    response.textContent = `Your answer: ${selectedText}. Correct answer: ${correctText}. ${question.explanation || ""}`;
+    card.append(response);
+    content.append(card);
+  });
+  panel.hidden = false;
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function renderHistoryList(container, items, kind) {
   container.replaceChildren();
   if (!items.length) {
@@ -204,25 +299,51 @@ function renderHistoryList(container, items, kind) {
     return;
   }
 
-  for (const item of [...items].slice(-8).reverse()) {
+  for (const item of [...items].slice(-6).reverse()) {
     const row = document.createElement("div");
     row.className = "history-item";
     const copy = document.createElement("div");
+    copy.className = "history-copy";
     const title = document.createElement("strong");
     const detail = document.createElement("span");
-    const score = document.createElement("div");
+    const action = document.createElement("button");
+    action.type = "button";
+    action.className = "button button-secondary history-action";
+
     if (kind === "plan") {
       title.textContent = item.subject || "Study plan";
       detail.textContent = [item.level, item.weeks ? `${item.weeks} week(s)` : "", formatDate(item.createdAt)].filter(Boolean).join(" · ");
-      score.textContent = "Plan";
+      if (typeof item.planText === "string" && item.planText.trim()) {
+        action.textContent = "Open plan";
+        action.addEventListener("click", () => openSavedPlan(item));
+      } else {
+        action.textContent = "Details only";
+        action.disabled = true;
+        action.title = "This plan was recorded before full plan history was enabled or its text was trimmed from older history.";
+      }
+      row.classList.add("history-item-plan");
+      copy.append(title, detail);
+      row.append(copy, action);
     } else {
       title.textContent = item.title || item.topic || "Practice quiz";
       detail.textContent = formatDate(item.createdAt);
+      const score = document.createElement("strong");
       score.className = "history-score";
       score.textContent = `${item.score}/${item.total}`;
+      if (Array.isArray(item.questions) && Array.isArray(item.answers)) {
+        action.textContent = "Review";
+        action.addEventListener("click", () => renderSavedQuizReview(item));
+      } else {
+        action.textContent = "Score only";
+        action.disabled = true;
+        action.title = "Detailed answers were not saved for this older attempt.";
+      }
+      const scoreAndAction = document.createElement("div");
+      scoreAndAction.className = "history-quiz-actions";
+      scoreAndAction.append(score, action);
+      copy.append(title, detail);
+      row.append(copy, scoreAndAction);
     }
-    copy.append(title, detail);
-    row.append(copy, score);
     container.append(row);
   }
 }
@@ -245,6 +366,8 @@ function renderProgress() {
   }
   renderHistoryList($("plan-history"), state.studyPlans, "plan");
   renderHistoryList($("quiz-history"), state.quizHistory, "quiz");
+  $("saved-quiz-review").hidden = true;
+  $("saved-quiz-review-content").replaceChildren();
 }
 
 function addStorageHistoryNotice() {
@@ -357,12 +480,24 @@ async function submitQuiz() {
   const questions = state.currentQuiz.questions;
   const score = questions.reduce((total, question, index) => total + Number(state.answers[index] === question.correct_index), 0);
   state.quizSubmitted = true;
+  const createdAt = new Date().toISOString();
   state.quizHistory.push({
+    id: createdAt,
     title: state.currentQuiz.title,
     topic: $("quiz-topic").value.trim(),
+    difficulty: $("quiz-difficulty").value,
     score,
     total: questions.length,
-    createdAt: new Date().toISOString(),
+    questions: questions.map((question) => ({
+      question: question.question,
+      options: [...question.options],
+      correct_index: question.correct_index,
+      explanation: question.explanation || "",
+    })),
+    answers: questions.map((_question, index) =>
+      Number.isInteger(state.answers[index]) ? state.answers[index] : null
+    ),
+    createdAt,
   });
   renderQuiz();
   renderProgress();
@@ -400,12 +535,17 @@ $("plan-form").addEventListener("submit", async (event) => {
     goals: $("plan-goals").value.trim(),
   });
   if (!data) return;
-  showResult($("plan-result"), $("plan-result-text"), null, "YOUR PLAN", data.text);
+  showResult($("plan-result"), $("plan-result-text"), $("plan-result-title"), "YOUR PLAN", data.text);
+  const createdAt = new Date().toISOString();
   state.studyPlans.push({
+    id: createdAt,
     subject: $("plan-subject").value.trim(),
     level: $("plan-level").value,
     weeks: Number($("plan-weeks").value),
-    createdAt: new Date().toISOString(),
+    hoursPerDay: Number($("plan-hours").value),
+    goals: $("plan-goals").value.trim(),
+    planText: data.text,
+    createdAt,
   });
   renderProgress();
   await saveActivity();
@@ -697,6 +837,11 @@ document.querySelectorAll("[data-copy]").forEach((button) => {
   });
 });
 
+
+$("close-saved-quiz-review").addEventListener("click", () => {
+  $("saved-quiz-review").hidden = true;
+  $("saved-quiz-review-content").replaceChildren();
+});
 
 $("profile-setup-btn").addEventListener("click", () => {
   setActivePage("profile");
