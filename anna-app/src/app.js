@@ -241,6 +241,11 @@ function renderQuiz() {
     question.options.forEach((option, optionIndex) => {
       const label = document.createElement("label");
       label.className = "quiz-option";
+      if (state.quizSubmitted && optionIndex === question.correct_index) {
+        label.classList.add("quiz-option-correct");
+      } else if (state.quizSubmitted && state.answers[index] === optionIndex) {
+        label.classList.add("quiz-option-incorrect");
+      }
       const input = document.createElement("input");
       input.type = "radio";
       input.name = `quiz-answer-${index}`;
@@ -370,10 +375,10 @@ async function extractPdfText(file) {
   const pdfjs = await getPdfJs();
   const bytes = new Uint8Array(await file.arrayBuffer());
   const loadingTask = pdfjs.getDocument({ data: bytes, isEvalSupported: false });
-  const pdf = await loadingTask.promise;
-  const pages = [];
-  let characterCount = 0;
   try {
+    const pdf = await loadingTask.promise;
+    const pages = [];
+    let characterCount = 0;
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
       const page = await pdf.getPage(pageNumber);
       const content = await page.getTextContent();
@@ -388,7 +393,8 @@ async function extractPdfText(file) {
     }
     return { text: pages.join("\n\n"), detail: `${pdf.numPages} page(s)` };
   } finally {
-    await pdf.destroy();
+    // PDF.js exposes destroy() on the loading task, not the document proxy.
+    await loadingTask.destroy();
   }
 }
 
