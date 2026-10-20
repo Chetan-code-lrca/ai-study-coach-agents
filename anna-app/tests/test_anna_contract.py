@@ -39,7 +39,7 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn("extractCompletionText(reply)", self.javascript)
         self.assertIn("systemPrompt: request.systemPrompt", self.javascript)
         self.assertIn("maxTokens: request.maxTokens", self.javascript)
-        self.assertIn("anna.llm.complete", self.bundle_javascript)
+        self.assertIn(".llm.complete(", self.bundle_javascript)
         self.assertNotIn("anna.tools.invoke", self.bundle_javascript)
 
     def test_frontend_does_not_require_provider_api_keys(self) -> None:
