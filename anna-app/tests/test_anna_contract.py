@@ -114,6 +114,45 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn("font-size: 15px;", self.css)
         self.assertIn("font-size: clamp(25px, 4vw, 35px);", self.css)
 
+    def test_study_profile_is_persisted_with_user_activity(self) -> None:
+        for element_id in (
+            "profile-form",
+            "profile-name",
+            "profile-course",
+            "profile-year",
+            "profile-goal",
+            "profile-hours",
+            "profile-focus",
+            "profile-save-btn",
+            "profile-status",
+            "profile-setup-btn",
+        ):
+            self.assertIn(f'id="{element_id}"', self.html)
+        self.assertIn('data-page="profile"', self.html)
+        self.assertIn("Anna handles account sign-in", self.html)
+        self.assertIn("does not ask for or store a password", self.html)
+        self.assertIn("state.profile = normalizeProfile(value.profile)", self.javascript)
+        self.assertIn("profile: state.profile", self.javascript)
+        self.assertIn("key: STORAGE_KEY", self.javascript)
+        self.assertIn("dailyHours", self.javascript)
+        self.assertIn("state.profile.primaryGoal", self.javascript)
+        self.assertIn("state.profile.focusAreas", self.javascript)
+
+    def test_first_run_profile_prompt_is_hidden_after_profile_load(self) -> None:
+        self.assertIn('id="profile-prompt" hidden', self.html)
+        self.assertIn('$("profile-prompt").hidden = Boolean(profile?.displayName)', self.javascript)
+        self.assertIn("Welcome back,", self.javascript)
+        self.assertIn("Your study goals and activity are saved with this Anna app.", self.javascript)
+
+    def test_existing_history_and_profile_share_the_same_storage_record(self) -> None:
+        self.assertIn("if (Array.isArray(value.studyPlans)) state.studyPlans = value.studyPlans", self.javascript)
+        self.assertIn("if (Array.isArray(value.quizHistory)) state.quizHistory = value.quizHistory", self.javascript)
+        self.assertIn("studyPlans: state.studyPlans.slice(-50)", self.javascript)
+        self.assertIn("quizHistory: state.quizHistory.slice(-100)", self.javascript)
+        self.assertIn("profile: state.profile", self.javascript)
+        self.assertIn("await anna.storage.get({ key: STORAGE_KEY })", self.javascript)
+        self.assertIn("await anna.storage.set({", self.javascript)
+
     def test_runtime_status_and_errors_remain_visible(self) -> None:
         self.assertIn("Working with Anna's model", self.javascript)
         self.assertIn('role="status"', self.html)
