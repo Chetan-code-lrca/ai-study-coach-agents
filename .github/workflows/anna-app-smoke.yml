@@ -54,42 +54,8 @@ jobs:
           cp anna-app/bundle/app.js /tmp/anna-study-coach.mjs
           node --check /tmp/anna-study-coach.mjs
 
-      - name: Verify Executa installs and answers JSON-RPC
-        run: |
-          python - <<'PY'
-          import json
-          import subprocess
-          from pathlib import Path
-
-          project = Path("anna-app/executas/study-coach")
-          requests = [
-              {"jsonrpc": "2.0", "method": "describe", "id": 1},
-              {"jsonrpc": "2.0", "method": "health", "id": 2},
-          ]
-          proc = subprocess.run(
-              ["uv", "run", "--project", str(project), "tool-dev-ai-study-coach"],
-              input=chr(10).join(json.dumps(item) for item in requests) + chr(10),
-              capture_output=True,
-              text=True,
-              timeout=240,
-          )
-          print(proc.stderr)
-          if proc.returncode:
-              raise SystemExit(f"Executa exited with {proc.returncode}: {proc.stdout} {proc.stderr}")
-
-          frames = []
-          for line in proc.stdout.splitlines():
-              try:
-                  frames.append(json.loads(line))
-              except json.JSONDecodeError:
-                  continue
-          by_id = {frame.get("id"): frame for frame in frames}
-          assert 1 in by_id and "result" in by_id[1], f"describe failed: {proc.stdout}"
-          assert by_id[1]["result"]["tools"][0]["name"] == "study_coach"
-          assert "llm.sample" in by_id[1]["result"]["host_capabilities"]
-          assert 2 in by_id and by_id[2]["result"]["status"] == "healthy"
-          print("Executa describe + health JSON-RPC checks passed.")
-          PY
+      - name: Exercise Executa startup and reverse sampling
+        run: python anna-app/tests/smoke_executa.py
 
       - name: Compile the Executa sources
         run: python -m py_compile anna-app/executas/study-coach/study_logic.py anna-app/executas/study-coach/study_coach_plugin.py
