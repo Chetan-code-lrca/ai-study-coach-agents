@@ -34,11 +34,14 @@ function showToast(message) {
 
 function getErrorMessage(error) {
   const message = error?.message || String(error || "Unknown error");
-  if (/SAMPLING_NOT_GRANTED|SAMPLING_NOT_NEGOTIATED|NOT_NEGOTIATED/i.test(message)) {
-    return "Anna LLM sampling is not enabled for this Executa yet. Check the app/Executa sampling permissions in Anna, then try again.";
+  if (/manifest does not grant.*llm\\.complete/i.test(message)) {
+    return "Anna denied direct LLM access. Confirm ui.host_api.llm includes \"complete\" in manifest.json, then restart the app.";
   }
   if (/timeout|timed out/i.test(message)) {
-    return "The request took too long. Try again with shorter notes or a smaller request.";
+    return "Anna's model request timed out. Try again, or shorten the study material if the error persists.";
+  }
+  if (/context length|too many tokens|prompt.{0,20}too long/i.test(message)) {
+    return "This request is too large for the selected model. Clear some material or summarize a shorter section first.";
   }
   return message;
 }
@@ -62,7 +65,7 @@ function extractCompletionText(reply) {
   throw new Error("Anna returned an empty response. Please try again.");
 }
 
-async function invokeStudyCoach(action, payload) {
+async function completeStudyAction(action, payload) {
   if (!anna) throw new Error("Anna runtime is not connected. Open this app inside the Anna App Harness and retry.");
   const request = buildStudyRequest(action, payload);
   // Use the documented frontend-to-host LLM API directly. This keeps source
@@ -123,7 +126,7 @@ async function runAction(button, statusElement, action, payload) {
   button.setAttribute("aria-busy", "true");
   setStatus(statusElement, "Working with Anna's model…");
   try {
-    const data = await invokeStudyCoach(action, payload);
+    const data = await completeStudyAction(action, payload);
     setStatus(statusElement, "Done.", "success");
     return data;
   } catch (error) {
