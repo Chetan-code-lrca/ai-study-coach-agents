@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>AI Study Coach</title>
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-mark" aria-hidden="true">SC</div>
+        <div class="brand-copy">
+          <p class="eyebrow">PERSONAL LEARNING SPACE</p>
+          <h1>AI Study Coach</h1>
+        </div>
+        <div class="runtime-pill"><span class="runtime-dot"></span><span id="connection-label">Connecting to Anna</span></div>
+      </header>
+
+      <div class="intro">
+        <p class="eyebrow">LEARN WITH A PLAN</p>
+        <h2>Make your next study session count.</h2>
+        <p>Plan your weeks, learn from your notes, and test what you remember.</p>
+      </div>
+
+      <nav class="tabs" role="tablist" aria-label="Study Coach sections">
+        <button class="tab is-active" type="button" role="tab" aria-selected="true" data-page="plan">Study plan</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" data-page="learn">Learn from notes</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" data-page="quiz">Practice quiz</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" data-page="progress">Progress</button>
+      </nav>
+
+      <main>
+        <section class="page is-active" id="page-plan" role="tabpanel">
+          <div class="section-heading">
+            <div><p class="eyebrow">01 / ORGANIZE</p><h2>Build a study plan</h2></div>
+            <p class="section-note">A realistic plan, shaped around your available time.</p>
+          </div>
+          <form class="panel form-grid" id="plan-form">
+            <label class="field field-wide">Subject
+              <input id="plan-subject" name="subject" maxlength="120" value="Computer Science" required placeholder="e.g. Operating Systems">
+            </label>
+            <label class="field">Current level
+              <select id="plan-level" name="level">
+                <option>Beginner</option><option selected>Intermediate</option><option>Advanced</option>
+              </select>
+            </label>
+            <label class="field">Plan length
+              <select id="plan-weeks" name="weeks">
+                <option value="1">1 week</option><option value="2">2 weeks</option><option value="3">3 weeks</option><option value="4" selected>4 weeks</option><option value="5">5 weeks</option><option value="6">6 weeks</option><option value="8">8 weeks</option><option value="10">10 weeks</option><option value="12">12 weeks</option>
+              </select>
+            </label>
+            <label class="field">Available time each day
+              <select id="plan-hours" name="hours_per_day">
+                <option value="0.5">30 minutes</option><option value="1">1 hour</option><option value="1.5">1.5 hours</option><option value="2" selected>2 hours</option><option value="3">3 hours</option><option value="4">4 hours</option><option value="5">5 hours</option><option value="6">6 hours</option><option value="8">8 hours</option>
+              </select>
+            </label>
+            <label class="field field-wide">Learning goals
+              <textarea id="plan-goals" name="goals" rows="3" maxlength="2000" placeholder="e.g. Prepare for semester exams, strengthen weak areas, and practise problems."></textarea>
+            </label>
+            <div class="form-actions field-wide">
+              <button class="button button-primary" id="plan-submit" type="submit">Generate study plan <span aria-hidden="true">↗</span></button>
+              <p class="status" id="plan-status" role="status" aria-live="polite"></p>
+            </div>
+            <article class="result-card field-wide" id="plan-result" hidden>
+              <div class="result-heading"><span class="result-kicker">YOUR PLAN</span><button type="button" class="text-button" data-copy="plan-result">Copy plan</button></div>
+              <pre class="result-text" id="plan-result-text"></pre>
+            </article>
+          </form>
+        </section>
+
+        <section class="page" id="page-learn" role="tabpanel" hidden>
+          <div class="section-heading">
+            <div><p class="eyebrow">02 / UNDERSTAND</p><h2>Learn from your notes</h2></div>
+            <p class="section-note">Paste a passage or class notes. The coach will ground its answer in the supplied material.</p>
+          </div>
+          <div class="panel">
+            <label class="field">Study material
+              <textarea id="material-text" rows="8" maxlength="30000" placeholder="Paste lecture notes, textbook extracts, definitions, or your own notes here (up to 30,000 characters)."></textarea>
+            </label>
+            <div class="material-meta"><span id="material-count">0 / 30,000 characters</span><span>Material is sent to Anna only when you request an action.</span></div>
+            <div class="button-row">
+              <button class="button button-primary" type="button" id="summarize-btn">Summarize notes</button>
+              <button class="button button-secondary" type="button" id="explain-btn">Explain concepts</button>
+            </div>
+            <p class="status" id="learn-status" role="status" aria-live="polite"></p>
+            <article class="result-card" id="learn-result" hidden>
+              <div class="result-heading"><span class="result-kicker" id="learn-result-title">RESULT</span><button type="button" class="text-button" data-copy="learn-result-text">Copy result</button></div>
+              <pre class="result-text" id="learn-result-text"></pre>
+            </article>
+            <div class="question-box">
+              <label class="field">Ask a question about these notes
+                <textarea id="question-text" rows="2" maxlength="3000" placeholder="What is the difference between a process and a thread?"></textarea>
+              </label>
+              <button class="button button-secondary" type="button" id="answer-btn">Answer from notes</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-quiz" role="tabpanel" hidden>
+          <div class="section-heading">
+            <div><p class="eyebrow">03 / RECALL</p><h2>Check your understanding</h2></div>
+            <p class="section-note">Generate multiple-choice practice and review explanations after submitting.</p>
+          </div>
+          <form class="panel form-grid" id="quiz-form">
+            <label class="field field-wide">Quiz topic
+              <input id="quiz-topic" maxlength="200" required placeholder="e.g. Operating Systems: CPU scheduling">
+            </label>
+            <label class="field">Difficulty
+              <select id="quiz-difficulty"><option>Easy</option><option selected>Medium</option><option>Hard</option></select>
+            </label>
+            <label class="field">Questions
+              <select id="quiz-count"><option value="3">3 questions</option><option value="5" selected>5 questions</option><option value="8">8 questions</option><option value="10">10 questions</option></select>
+            </label>
+            <label class="field field-wide">Optional source material
+              <textarea id="quiz-source" rows="4" maxlength="30000" placeholder="Add notes if you want the quiz grounded in specific material."></textarea>
+            </label>
+            <div class="form-actions field-wide">
+              <button class="button button-primary" id="quiz-submit" type="submit">Generate quiz <span aria-hidden="true">↗</span></button>
+              <p class="status" id="quiz-status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+          <section class="quiz-result" id="quiz-result" aria-label="Generated quiz" hidden></section>
+        </section>
+
+        <section class="page" id="page-progress" role="tabpanel" hidden>
+          <div class="section-heading">
+            <div><p class="eyebrow">04 / REFLECT</p><h2>Your study activity</h2></div>
+            <p class="section-note">Plans and quiz results are saved to Anna storage for this app.</p>
+          </div>
+          <div class="metrics-grid">
+            <article class="metric-card"><span>Plans generated</span><strong id="plans-count">0</strong></article>
+            <article class="metric-card"><span>Quizzes completed</span><strong id="quizzes-count">0</strong></article>
+            <article class="metric-card"><span>Average quiz score</span><strong id="average-score">—</strong></article>
+          </div>
+          <div class="panel history-panel">
+            <div class="history-section"><div class="result-heading"><h3>Recent study plans</h3></div><div id="plan-history" class="history-list"><p class="empty-state">No study plans yet.</p></div></div>
+            <div class="history-section"><div class="result-heading"><h3>Recent quizzes</h3></div><div id="quiz-history" class="history-list"><p class="empty-state">No quiz attempts yet.</p></div></div>
+            <p class="status" id="progress-status" role="status" aria-live="polite"></p>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer"><span>AI Study Coach</span><span>Powered by Anna's hosted LLM</span></footer>
+      <div class="toast" id="app-status" role="status" aria-live="polite"></div>
+    </div>
+    <!-- Generated by anna-app dev / apps publish when bundled Executas are resolved. -->
+    <script src="anna-tool-ids.js"></script>
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
