@@ -16,7 +16,7 @@ This is the Anna-native version of the existing AI Study Coach project. The orig
 - uv
 - Anna CLI, installed with npm install -g @anna-ai/cli
 - An Anna account with developer access activated and CLI login completed
-- Anna's LLM sampling permission enabled for the Executa when prompted by the platform
+- The app-level `ui.host_api.llm: ["complete"]` permission declared in `manifest.json` and the Executa's `host_capabilities: ["llm.sample"]` permission
 
 ## Run locally
 
@@ -28,7 +28,7 @@ From the repository root, run the following PowerShell commands:
 
 Open the local URL printed by the CLI (usually http://localhost:5180/) and test the Study plan, Learn from notes, Practice quiz, and Progress tabs.
 
-If a request reports SAMPLING_NOT_GRANTED or SAMPLING_NOT_NEGOTIATED, check the app/Executa sampling grant in Anna and confirm that your account is permitted to use the host LLM. The GitHub tests intentionally do not call a live model or require developer credentials.
+If an LLM request reports a manifest permission error, confirm `ui.host_api.llm` includes `complete` and rerun `anna-app validate --strict`. Reverse sampling also requires the bundled Executa to declare `host_capabilities: ["llm.sample"]` and the user's Executa sampling grant to be enabled in Anna. The [official Anna LLM demo manifest](https://github.com/whtcjdtc2007/anna-executa-examples/blob/6325e4c44f9a43d756a40eb20df32918610483bb/examples/anna-app-llm-demo/manifest.json) shows the host LLM grant alongside a bundled sampling Executa. The GitHub tests exercise the reverse-sampling protocol offline; they do not require developer credentials or prove that the user's live sampling grant is enabled.
 
 ## Automated checks
 
