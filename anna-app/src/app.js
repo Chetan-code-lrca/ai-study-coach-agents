@@ -34,7 +34,7 @@ function showToast(message) {
 
 function getErrorMessage(error) {
   const message = error?.message || String(error || "Unknown error");
-  if (/manifest does not grant.*llm\\.complete/i.test(message)) {
+  if (/manifest does not grant.*llm\.complete/i.test(message)) {
     return "Anna denied direct LLM access. Confirm ui.host_api.llm includes \"complete\" in manifest.json, then restart the app.";
   }
   if (/timeout|timed out/i.test(message)) {
