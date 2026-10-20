@@ -66,6 +66,7 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn("text is sent to Anna only when you request an AI action", self.html)
 
     def test_document_parsers_are_pinned_and_bundled_locally(self) -> None:
+        self.assertEqual(self.package["dependencies"]["katex"], "0.19.0")
         self.assertEqual(self.package["dependencies"]["pdfjs-dist"], "6.4.299")
         self.assertEqual(self.package["dependencies"]["mammoth"], "1.13.0")
         self.assertEqual(self.package["devDependencies"]["esbuild"], "0.28.2")
@@ -73,7 +74,21 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn('from "mammoth"', self.javascript)
         self.assertIn('new URL("./pdf.worker.min.mjs", import.meta.url)', self.javascript)
         self.assertIn('"pdf.worker.min.mjs"', self.build_script)
+        self.assertIn('"katex.min.css"', self.build_script)
+        self.assertIn('"fonts"', self.build_script)
+        self.assertIn('href="./katex.min.css"', self.html)
         self.assertTrue((APP_ROOT / "bundle" / "pdf.worker.min.mjs").is_file())
+        self.assertTrue((APP_ROOT / "bundle" / "katex.min.css").is_file())
+        self.assertTrue((APP_ROOT / "bundle" / "fonts" / "KaTeX_Main-Regular.woff2").is_file())
+
+    def test_markdown_renderer_typesets_math_with_trusted_local_katex(self) -> None:
+        markdown = (APP_ROOT / "src" / "markdown.js").read_text(encoding="utf-8")
+        self.assertIn('import katex from "katex"', markdown)
+        self.assertIn("katex.renderToString", markdown)
+        self.assertIn("throwOnError: false", markdown)
+        self.assertIn("trust: false", markdown)
+        self.assertIn("math-display", self.css)
+        self.assertIn(".markdown-result .katex", self.css)
 
     def test_pdf_cleanup_uses_the_documented_loading_task_api(self) -> None:
         self.assertIn("const loadingTask = pdfjs.getDocument", self.javascript)
