@@ -19,16 +19,29 @@ Vercel's Python Functions are designed for HTTP function frameworks; they do not
 
 ## Sync and update the Anna-native app on Windows
 
-From a clean local clone of this repository, run the following from PowerShell at the repository root:
+From a clean local clone of this repository, run one of these from the repository root.
+
+**Windows PowerShell**
 
     .\scripts\Update-AnnaApp.ps1
 
-The script checks for uncommitted changes, fast-forwards the local main branch from GitHub, rebuilds the Anna frontend, runs its tests, validates the manifest and Host API permissions, and checks generated JavaScript syntax. It will not discard local edits.
+**Linux / WSL / macOS**
 
-After local checks pass, authenticate with Anna if needed and push the verified bundle as a working draft:
+    bash scripts/update-anna-app.sh
+
+These scripts check for uncommitted changes, fast-forward the local main branch from GitHub, rebuild the Anna frontend, run tests, validate the manifest and Host API permissions, and check generated JavaScript syntax. They do not discard local edits.
+
+After local checks pass, authenticate with Anna if needed and push the verified bundle as a working draft.
+
+PowerShell:
 
     anna-app login --host https://anna.partners
     .\scripts\Update-AnnaApp.ps1 -PushToAnna
+
+Linux / WSL / macOS:
+
+    anna-app login --host https://anna.partners
+    bash scripts/update-anna-app.sh --push-to-anna
 
 The current app version is **0.1.1**. A successful `anna-app apps push` updates the working draft; it does not itself publish an official release. In Anna Developer Console, install and test the draft, cut version `0.1.1`, and complete the platform's review/publish steps before treating it as released to users.
 
