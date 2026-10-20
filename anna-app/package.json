@@ -1,0 +1,19 @@
+{
+  "name": "ai-study-coach-anna-app",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Build the self-contained Anna Study Coach frontend bundle.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "dependencies": {
+    "mammoth": "1.13.0",
+    "pdfjs-dist": "6.4.299"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
