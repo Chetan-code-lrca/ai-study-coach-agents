@@ -6,6 +6,17 @@ AI Study Coach is a Python/Streamlit app for building study plans, working with 
 
 The repository also contains older agent and service code from earlier versions of the project. The current Streamlit app is started from `streamlit_app.py`.
 
+## Deployment architecture
+
+This repository contains three related but distinct surfaces:
+
+- **Vercel public site:** the static product overview in the public directory. The Vercel configuration publishes that directory. It is a public introduction, not a pretend live AI session.
+- **Streamlit web app:** deploy the Streamlit entrypoint through [Streamlit Community Cloud](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app), configure GOOGLE_API_KEY in the platform's secrets, and use its streamlit.app URL for the working Streamlit experience.
+- **Anna-native app:** the separate anna-app bundle runs inside Anna's runtime. Publish and release it through the Anna Developer Console after App Review.
+
+Vercel's Python Functions are designed for HTTP function frameworks; they do not replace the managed Streamlit server workflow. The public Vercel home page links to the source and explains where the interactive Anna experience runs.
+
+
 ## What the current app does
 
 ### Study Plan
