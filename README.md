@@ -8,13 +8,14 @@ The repository also contains older agent and service code from earlier versions 
 
 ## Deployment architecture
 
-This repository contains three related but distinct surfaces:
+This repository contains three related application surfaces:
 
-- **Vercel public site:** the static product overview in the public directory. The Vercel configuration publishes that directory. It is a public introduction, not a pretend live AI session.
-- **Streamlit web app:** deploy the Streamlit entrypoint through [Streamlit Community Cloud](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app), configure GOOGLE_API_KEY in the platform's secrets, and use its streamlit.app URL for the working Streamlit experience.
-- **Anna-native app:** the separate anna-app bundle runs inside Anna's runtime. Publish and release it through the Anna Developer Console after App Review.
+- **Vercel browser app:** the public site lives at [ai-study-coach-agents.vercel.app](https://ai-study-coach-agents.vercel.app/). The **Launch the web app** links open the actual study workspace at `/app/`, built from the reviewed Anna UI. The browser edition uses localStorage for profile, notes, plans, and quiz history; those records remain in that browser and do not sync automatically to Anna or other devices.
+- **Vercel AI endpoint:** the browser app calls a same-origin serverless function at `/api/study`. It sends prompts to the Gemini API using a server-side environment variable. Configure `GOOGLE_API_KEY` in Vercel Project Settings → Environment Variables for Production (and Preview if needed), then redeploy. Set the optional `GEMINI_MODEL` variable to select a model; the default is `gemini-3.8-flash`. **Never put provider keys in browser JavaScript, public files, or Git.** Monitor Gemini usage and set provider quotas; the API includes only best-effort per-instance rate limiting.
+- **Anna-native app:** `anna-app/` is the separate Anna-runtime edition. It uses Anna's LLM and Storage host APIs and does not need the Vercel Gemini key.
+- **Streamlit edition:** `streamlit_app.py` remains an alternative Python-hosted implementation for Streamlit Community Cloud. Set `GOOGLE_API_KEY` in that service's secrets as well. Its session state is independent of both the Vercel browser app and the Anna-native app.
 
-Vercel's Python Functions are designed for HTTP function frameworks; they do not replace the managed Streamlit server workflow. The public Vercel home page links to the source and explains where the interactive Anna experience runs.
+Vercel runs the static landing page and browser UI, plus the short-lived serverless AI endpoint. It does not run a persistent Streamlit server.
 
 
 ## Sync and update the Anna-native app on Windows
@@ -43,7 +44,7 @@ Linux / WSL / macOS:
     anna-app login --host https://anna.partners
     bash scripts/update-anna-app.sh --push-to-anna
 
-The current app version is **0.1.1**. A successful `anna-app apps push` updates the working draft; it does not itself publish an official release. In Anna Developer Console, install and test the draft, cut version `0.1.1`, and complete the platform's review/publish steps before treating it as released to users.
+The current Anna-native app version is **0.1.2**. A successful `anna-app apps push` updates the working draft; it does not itself publish an official release. In Anna Developer Console, install and test the draft, cut version `0.1.2`, and complete the platform's review/publish steps before treating it as released to users.
 
 
 
