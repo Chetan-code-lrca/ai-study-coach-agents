@@ -20,6 +20,14 @@ export function prepareHistoryForStorage(items, kind, maxItems, detailLimit = 6)
     } else if (kind === "quiz" && !keepDetails) {
       delete record.questions;
       delete record.answers;
+    } else if (kind === "note") {
+      if (!keepDetails) {
+        delete record.material;
+        delete record.materialTruncated;
+      } else if (typeof record.material === "string" && record.material.length > 10000) {
+        record.material = record.material.slice(0, 10000);
+        record.materialTruncated = true;
+      }
     }
     return record;
   });

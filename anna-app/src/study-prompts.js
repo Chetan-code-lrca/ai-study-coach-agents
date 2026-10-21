@@ -84,6 +84,10 @@ export function buildStudyRequest(action, args = {}) {
       maxChars: 2000,
       defaultValue: "Build strong conceptual understanding and problem-solving ability.",
     }) || "Build strong conceptual understanding and problem-solving ability.";
+    const sourceMaterial = text(args, "source_material", {
+      label: "Source material",
+      maxChars: MAX_MATERIAL_CHARS,
+    });
     return {
       systemPrompt: STUDY_SYSTEM_PROMPT,
       maxTokens: 3000,
@@ -94,13 +98,17 @@ export function buildStudyRequest(action, args = {}) {
         `Duration: ${weeks} weeks`,
         `Available study time: ${hours} hours per day`,
         `Learning goals: ${goals}`,
+        sourceMaterial
+          ? "Use the supplied notes to prioritize and sequence the concepts the student needs to study. Do not claim that absent concepts are present in the notes; label useful prerequisites or extra topics as recommendations beyond the notes."
+          : "",
         "",
         "Structure the answer by week and provide a realistic day-by-day schedule.",
         "Do not use Markdown tables or pipe-delimited rows. Use a heading for each week, one short focus line, then a numbered list with a separate list item for each day.",
         "For each day, state the topic and split the available time into specific activities. Put every day on its own line; never merge multiple days into one paragraph.",
         "Include topic sequencing, active recall, practice questions, spaced revision, catch-up time, and a weekly checkpoint.",
         "Keep the total workload within the student's stated availability. End with a short method for adjusting the plan when the student falls behind.",
-      ].join("\n"),
+        sourceMaterial ? referenceMaterial(sourceMaterial) : "",
+      ].filter(Boolean).join("\n"),
     };
   }
 

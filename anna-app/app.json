@@ -1,8 +1,8 @@
 {
   "slug": "ai-study-coach",
   "name": "AI Study Coach",
-  "version": "0.1.1",
-  "tagline": "Personalized study planning, source-grounded learning, and quizzes.",
-  "description": "An AI study companion that creates study plans, reads and summarizes local study documents, answers questions grounded in their text, and generates practice quizzes. Calls Anna's hosted LLM directly from the app UI; no provider-specific API key is stored by this app.",
+  "version": "0.1.2",
+  "tagline": "Turn class notes into study plans, revision guides, and linked quizzes.",
+  "description": "AI Study Coach turns your course material into a practical learning workflow. Upload or paste notes, save them to your note history, and ask for source-grounded summaries, concept explanations, or answers. Use saved notes to generate a multi-week study plan or a multiple-choice quiz linked to its source. Track quiz scores, review correct answers and explanations, and personalize your daily study target with a saved study profile. Supports text-based PDF, DOCX, TXT, Markdown, CSV, and JSON files. Text is extracted locally in the browser and sent to Anna only when you request an AI action; scanned PDFs are not supported.",
   "category": "education"
 }

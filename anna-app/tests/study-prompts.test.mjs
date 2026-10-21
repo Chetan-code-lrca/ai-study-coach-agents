@@ -20,6 +20,16 @@ test("study plan preserves subject, schedule limits, and goals", () => {
   assert.equal(request.maxTokens, 3000);
 });
 
+test("study plan uses supplied notes to connect planning to learning material", () => {
+  const request = buildStudyRequest("generate_study_plan", {
+    subject: "Operating Systems",
+    source_material: "CPU scheduling selects which ready process runs next.",
+  });
+  assert.match(request.prompt, /prioritize and sequence the concepts/i);
+  assert.match(request.prompt, /CPU scheduling selects which ready process runs next/);
+  assert.match(request.prompt, /Do not claim that absent concepts are present/);
+});
+
 test("study plan rejects invalid user choices", () => {
   assert.throws(() => buildStudyRequest("generate_study_plan", { subject: "DBMS", level: "Expert" }), /Current level/);
   assert.throws(() => buildStudyRequest("generate_study_plan", { subject: "DBMS", weeks: 13 }), /between 1 and 12/);
