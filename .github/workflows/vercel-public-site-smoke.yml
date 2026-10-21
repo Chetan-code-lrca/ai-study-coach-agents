@@ -48,5 +48,7 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Build Vercel browser app
         run: npm run build
-      - name: Verify public site, browser app, accessibility basics, and Vercel output
-        run: node --test tests/public-site.test.mjs
+      - name: Check serverless endpoint syntax
+        run: node --check api/study.js
+      - name: Verify public site, browser app, endpoint safeguards, accessibility, and Vercel output
+        run: npm test
