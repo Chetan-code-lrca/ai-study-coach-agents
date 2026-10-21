@@ -1,0 +1,16 @@
+{
+  "name": "ai-study-coach-web",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-web-app.mjs",
+    "test": "node --test tests/public-site.test.mjs"
+  },
+  "dependencies": {
+    "esbuild": "0.28.2",
+    "katex": "0.19.0",
+    "mammoth": "1.13.0",
+    "pdfjs-dist": "6.4.299"
+  }
+}
