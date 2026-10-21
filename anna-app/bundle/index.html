@@ -65,6 +65,10 @@
             <label class="field field-wide">Learning goals
               <textarea id="plan-goals" name="goals" rows="3" maxlength="2000" placeholder="e.g. Prepare for semester exams, strengthen weak areas, and practise problems."></textarea>
             </label>
+            <div class="plan-source-context field-wide" id="plan-source-context" hidden>
+              <span id="plan-source-label"></span>
+              <button class="button button-secondary" type="button" id="clear-plan-source">Remove note source</button>
+            </div>
             <div class="form-actions field-wide">
               <button class="button button-primary" id="plan-submit" type="submit">Generate study plan <span aria-hidden="true">↗</span></button>
               <p class="status" id="plan-status" role="status" aria-live="polite"></p>
@@ -106,13 +110,25 @@
                 <ul id="attached-files-list" class="attached-files-list"></ul>
               </div>
             </section>
+            <label class="field note-title-field">Note title
+              <input id="note-title" maxlength="120" placeholder="e.g. Operating Systems — CPU scheduling">
+            </label>
             <label class="field material-label">Study material
               <textarea id="material-text" rows="8" maxlength="30000" placeholder="Drop a file above or paste lecture notes, textbook extracts, definitions, or your own notes here (up to 30,000 characters)."></textarea>
             </label>
             <div class="material-meta"><span id="material-count">0 / 30,000 characters</span><span>Extracted text remains in this window until you request an AI action.</span></div>
             <div class="button-row file-actions">
+              <button class="button button-secondary" type="button" id="save-note-btn">Save notes to history</button>
               <button class="button button-secondary" type="button" id="use-for-quiz-btn">Use these notes for a quiz</button>
+              <button class="button button-secondary" type="button" id="use-for-plan-btn">Build a plan from these notes</button>
             </div>
+            <section class="note-history-section" aria-labelledby="notes-history-title">
+              <div class="result-heading">
+                <h3 id="notes-history-title">Saved notes</h3>
+                <span class="empty-state" id="notes-history-count">0 saved</span>
+              </div>
+              <div id="notes-history" class="history-list"><p class="empty-state">No saved notes yet. Add or paste material, then save it here.</p></div>
+            </section>
             <div class="button-row">
               <button class="button button-primary" type="button" id="summarize-btn">Summarize notes</button>
               <button class="button button-secondary" type="button" id="explain-btn">Explain concepts</button>
@@ -146,8 +162,13 @@
             <label class="field">Questions
               <select id="quiz-count"><option value="3">3 questions</option><option value="5" selected>5 questions</option><option value="8">8 questions</option><option value="10">10 questions</option></select>
             </label>
+            <label class="field field-wide">Link a saved note (optional)
+              <select id="quiz-note-select">
+                <option value="">No saved note selected</option>
+              </select>
+            </label>
             <label class="field field-wide">Optional source material
-              <textarea id="quiz-source" rows="4" maxlength="30000" placeholder="Add notes if you want the quiz grounded in specific material."></textarea>
+              <textarea id="quiz-source" rows="4" maxlength="30000" placeholder="Choose a saved note above or add your own source material."></textarea>
             </label>
             <div class="form-actions field-wide">
               <button class="button button-primary" id="quiz-submit" type="submit">Generate quiz <span aria-hidden="true">↗</span></button>
@@ -164,6 +185,7 @@
           </div>
           <div class="metrics-grid">
             <article class="metric-card"><span>Plans generated</span><strong id="plans-count">0</strong></article>
+            <article class="metric-card"><span>Notes saved</span><strong id="notes-count">0</strong></article>
             <article class="metric-card"><span>Quizzes completed</span><strong id="quizzes-count">0</strong></article>
             <article class="metric-card"><span>Average quiz score</span><strong id="average-score">—</strong></article>
           </div>
