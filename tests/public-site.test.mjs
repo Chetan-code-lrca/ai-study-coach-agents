@@ -123,7 +123,7 @@ test("privacy notice covers both separate editions and the data sent for AI acti
   assert.match(html, /Google Gemini/);
   assert.match(html, /Anna's hosted LLM/);
   assert.match(html, /GitHub issue tracker/);
-  assert.match(html, /href="\\/app\\/">Launch the web app/);
+  assert.match(html, /href="\/app\/">Launch the web app/);
 });
 
 test("site map and crawler instructions use the canonical public origin", async () => {
