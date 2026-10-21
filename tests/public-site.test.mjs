@@ -64,13 +64,13 @@ test("navigation fragments resolve and key controls are accessible", async () =>
 
 test("landing page links directly to the working browser app", async () => {
   const html = await read("public/index.html");
-  for (const match of html.matchAll(/<a\\b([^>]*target="_blank"[^>]*)>/g)) {
-    assert.match(match[1], /\\brel="noreferrer"/, "Unsafe external link: " + match[0]);
+  for (const match of html.matchAll(/<a\b([^>]*target="_blank"[^>]*)>/g)) {
+    assert.match(match[1], /\brel="noreferrer"/, "Unsafe external link: " + match[0]);
   }
-  assert.match(html, /href="\\/app\\/">Launch the web app/);
-  assert.match(html, /href="\\/app\\/">Open AI Study Coach/);
+  assert.match(html, /href="\/app\/">Launch the web app/);
+  assert.match(html, /href="\/app\/">Open AI Study Coach/);
   assert.match(html, /The web edition stores your activity in this browser/);
-  assert.doesNotMatch(html, /href="(?:#|javascript:)"\\s*>\\s*(?:Launch|Open|Start) app/i);
+  assert.doesNotMatch(html, /href="(?:#|javascript:)"\s*>\s*(?:Launch|Open|Start) app/i);
 });
 
 test("the generated browser app includes notes, planning, quizzes, and progress", async () => {
