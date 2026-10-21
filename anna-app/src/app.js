@@ -11,11 +11,18 @@ const $ = (id) => document.getElementById(id);
 const state = {
   studyPlans: [],
   quizHistory: [],
+  notesHistory: [],
   profile: null,
   currentQuiz: null,
   answers: {},
   quizSubmitted: false,
   attachedFiles: [],
+  activeNoteId: null,
+  quizSourceNoteId: null,
+  quizSourceNoteTitle: "",
+  planSourceNoteId: null,
+  planSourceNoteTitle: "",
+  planSourceMaterial: "",
 };
 let anna = null;
 
@@ -141,6 +148,7 @@ async function loadActivity() {
     if (value && typeof value === "object") {
       if (Array.isArray(value.studyPlans)) state.studyPlans = value.studyPlans;
       if (Array.isArray(value.quizHistory)) state.quizHistory = value.quizHistory;
+      if (Array.isArray(value.notesHistory)) state.notesHistory = value.notesHistory;
       state.profile = normalizeProfile(value.profile);
     }
   } catch (error) {
@@ -161,6 +169,7 @@ async function saveActivity() {
         // the six most recent plans and quizzes to keep the single APS value lean.
         studyPlans: prepareHistoryForStorage(state.studyPlans, "plan", 50),
         quizHistory: prepareHistoryForStorage(state.quizHistory, "quiz", 100),
+        notesHistory: prepareHistoryForStorage(state.notesHistory, "note", 50, 4),
       },
     });
     return true;
@@ -203,6 +212,11 @@ function openSavedPlan(item) {
     return;
   }
   setActivePage("plan");
+  $("plan-source-note-id").textContent = "";
+  state.planSourceNoteId = item.sourceNoteId || null;
+  state.planSourceNoteTitle = item.sourceNoteTitle || "";
+  state.planSourceMaterial = state.notesHistory.find((note) => note.id === state.planSourceNoteId)?.material || "";
+  updatePlanSourcePresentation();
   $("plan-subject").value = item.subject || "";
   $("plan-level").value = item.level || "Intermediate";
   $("plan-weeks").value = String(item.weeks || 4);
@@ -232,8 +246,11 @@ function renderSavedQuizReview(attempt) {
   }
 
   $("saved-quiz-review-title").textContent = attempt.title || attempt.topic || "Quiz review";
-  $("saved-quiz-review-meta").textContent =
-    `${attempt.score}/${attempt.total} correct · ${formatDate(attempt.createdAt)}`;
+  $("saved-quiz-review-meta").textContent = [
+    `${attempt.score}/${attempt.total} correct`,
+    formatDate(attempt.createdAt),
+    attempt.sourceNoteTitle ? "Based on: " + attempt.sourceNoteTitle : "",
+  ].filter(Boolean).join(" · ");
   attempt.questions.forEach((question, index) => {
     const card = document.createElement("article");
     card.className = "quiz-card saved-review-question";
@@ -291,7 +308,7 @@ function renderHistoryList(container, items, kind) {
 
     if (kind === "plan") {
       title.textContent = item.subject || "Study plan";
-      detail.textContent = [item.level, item.weeks ? `${item.weeks} week(s)` : "", formatDate(item.createdAt)].filter(Boolean).join(" · ");
+      detail.textContent = [item.level, item.weeks ? `${item.weeks} week(s)` : "", formatDate(item.createdAt), item.sourceNoteTitle ? "Notes: " + item.sourceNoteTitle : ""].filter(Boolean).join(" · ");
       if (typeof item.planText === "string" && item.planText.trim()) {
         action.textContent = "Open plan";
         action.addEventListener("click", () => openSavedPlan(item));
@@ -305,7 +322,7 @@ function renderHistoryList(container, items, kind) {
       row.append(copy, action);
     } else {
       title.textContent = item.title || item.topic || "Practice quiz";
-      detail.textContent = formatDate(item.createdAt);
+      detail.textContent = [formatDate(item.createdAt), item.sourceNoteTitle ? "Based on: " + item.sourceNoteTitle : ""].filter(Boolean).join(" · ");
       const score = document.createElement("strong");
       score.className = "history-score";
       score.textContent = `${item.score}/${item.total}`;
@@ -334,9 +351,213 @@ function formatDate(value) {
   return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
+function deriveNoteTitle(material) {
+  const firstLine = String(material || "").split(/\r?\n/)
+    .map((line) => line.replace(/^#+\s*/, "").trim())
+    .find((line) => line && !/^--- Source file:/i.test(line));
+  return (firstLine || "Study notes").slice(0, 120);
+}
+
+function renderNoteHistory() {
+  const container = $("notes-history");
+  if (!container) return;
+  container.replaceChildren();
+  const count = $("notes-history-count");
+  if (count) count.textContent = state.notesHistory.length + " saved";
+  if (!state.notesHistory.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "No saved notes yet. Add or paste material, then save it here.";
+    container.append(empty);
+    return;
+  }
+
+  for (const note of [...state.notesHistory].slice(-8).reverse()) {
+    const row = document.createElement("div");
+    row.className = "history-item note-history-item";
+    const copy = document.createElement("div");
+    copy.className = "history-copy";
+    const title = document.createElement("strong");
+    title.textContent = note.title || "Study notes";
+    const detail = document.createElement("span");
+    const sourceNames = Array.isArray(note.sourceFiles) && note.sourceFiles.length
+      ? note.sourceFiles.join(", ")
+      : "Pasted notes";
+    detail.textContent = [
+      sourceNames,
+      formatDate(note.createdAt),
+      Number.isFinite(note.characters) ? note.characters.toLocaleString() + " characters" : "",
+      note.materialTruncated ? "Saved preview" : "",
+    ].filter(Boolean).join(" · ");
+    copy.append(title, detail);
+
+    const actions = document.createElement("div");
+    actions.className = "note-history-actions";
+    const load = document.createElement("button");
+    load.type = "button";
+    load.className = "button button-secondary history-action";
+    load.textContent = "Load";
+    load.disabled = typeof note.material !== "string" || !note.material.trim();
+    load.title = load.disabled ? "Only the title and date are retained for older notes." : "Load this saved note";
+    load.addEventListener("click", () => loadSavedNote(note));
+
+    const quiz = document.createElement("button");
+    quiz.type = "button";
+    quiz.className = "button button-secondary history-action";
+    quiz.textContent = "Use for quiz";
+    quiz.disabled = typeof note.material !== "string" || !note.material.trim();
+    quiz.addEventListener("click", () => useSavedNoteForQuiz(note));
+
+    const plan = document.createElement("button");
+    plan.type = "button";
+    plan.className = "button button-secondary history-action";
+    plan.textContent = "Use for plan";
+    plan.disabled = typeof note.material !== "string" || !note.material.trim();
+    plan.addEventListener("click", () => useSavedNoteForPlan(note));
+
+    actions.append(load, quiz, plan);
+    row.append(copy, actions);
+    container.append(row);
+  }
+}
+
+function renderQuizNoteOptions() {
+  const select = $("quiz-note-select");
+  if (!select) return;
+  select.replaceChildren();
+  const blank = document.createElement("option");
+  blank.value = "";
+  blank.textContent = "No saved note selected";
+  select.append(blank);
+
+  for (const note of [...state.notesHistory].slice(-50).reverse()) {
+    const option = document.createElement("option");
+    option.value = note.id;
+    option.textContent = (note.title || "Study notes") + " · " + formatDate(note.createdAt);
+    option.disabled = typeof note.material !== "string" || !note.material.trim();
+    select.append(option);
+  }
+  select.value = state.quizSourceNoteId || "";
+}
+
+function updatePlanSourcePresentation() {
+  const context = $("plan-source-context");
+  const label = $("plan-source-label");
+  const clear = $("clear-plan-source");
+  if (!context || !label || !clear) return;
+  const hasSource = Boolean(state.planSourceNoteTitle);
+  context.hidden = !hasSource;
+  label.textContent = hasSource
+    ? "Plan source: " + state.planSourceNoteTitle + (state.planSourceMaterial ? " — the saved note will guide topic selection." : " — note text is no longer available; this saved-plan reference is metadata only.")
+    : "";
+  clear.disabled = !hasSource;
+}
+
+function loadSavedNote(note) {
+  if (!note || typeof note.material !== "string" || !note.material.trim()) {
+    showToast("This older note has history details only. Its text is not available to load.");
+    return;
+  }
+  state.activeNoteId = note.id;
+  $("note-title").value = note.title || "Study notes";
+  $("material-text").value = note.material;
+  state.attachedFiles = [];
+  renderAttachedFiles();
+  updateMaterialCount();
+  setActivePage("learn");
+  setStatus($("file-status"), note.materialTruncated
+    ? "Loaded a saved preview. This note was shortened to fit the history storage limit."
+    : "Loaded saved note: " + (note.title || "Study notes") + ".", note.materialTruncated ? "error" : "success");
+  $("learn-result").hidden = true;
+  $("material-text").focus();
+}
+
+async function saveCurrentNote({ silent = false } = {}) {
+  const material = $("material-text").value.trim();
+  if (!material) {
+    setStatus($("file-status"), "Add or paste study material before saving a note.", "error");
+    $("material-text").focus();
+    return null;
+  }
+  const title = ($("note-title").value.trim() || deriveNoteTitle(material)).slice(0, 120);
+  const existing = state.notesHistory.find((note) => note.id === state.activeNoteId);
+  if (existing && existing.material === material && existing.title === title) return existing;
+
+  const note = {
+    id: "note-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+    title,
+    material,
+    characters: material.length,
+    sourceFiles: state.attachedFiles.map((file) => file.name).filter(Boolean),
+    createdAt: new Date().toISOString(),
+  };
+  state.notesHistory.push(note);
+  state.notesHistory = state.notesHistory.slice(-50);
+  state.activeNoteId = note.id;
+  $("note-title").value = title;
+  const persisted = await saveActivity();
+  renderProgress();
+  if (!silent) {
+    if (persisted) {
+      setStatus($("file-status"), "Saved “" + title + "” to note history.", "success");
+      showToast("Note saved to history.");
+    } else {
+      setStatus($("file-status"), "Note is available in this window, but Anna Storage did not save it.", "error");
+    }
+  }
+  return note;
+}
+
+async function getOrSaveCurrentNote() {
+  const material = $("material-text").value.trim();
+  if (!material) {
+    setStatus($("file-status"), "Add or paste study material first.", "error");
+    $("material-text").focus();
+    return null;
+  }
+  const title = ($("note-title").value.trim() || deriveNoteTitle(material)).slice(0, 120);
+  const existing = state.notesHistory.find((note) => note.id === state.activeNoteId);
+  if (existing && existing.material === material && existing.title === title) return existing;
+  return saveCurrentNote({ silent: true });
+}
+
+function setQuizSourceNote(note) {
+  if (!note || typeof note.material !== "string" || !note.material.trim()) return false;
+  state.quizSourceNoteId = note.id;
+  state.quizSourceNoteTitle = note.title || "Study notes";
+  $("quiz-note-select").value = note.id;
+  $("quiz-source").value = note.material;
+  if (!$("quiz-topic").value.trim()) $("quiz-topic").value = note.title || "Study notes";
+  setStatus($("quiz-status"), "Quiz source linked to saved note: " + state.quizSourceNoteTitle + ".", "success");
+  return true;
+}
+
+function useSavedNoteForQuiz(note) {
+  if (!setQuizSourceNote(note)) {
+    showToast("This note's full text is not available. Load a newer saved note instead.");
+    return;
+  }
+  setActivePage("quiz");
+  $("quiz-status").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function useSavedNoteForPlan(note) {
+  if (!note || typeof note.material !== "string" || !note.material.trim()) {
+    showToast("This note's full text is not available. Load a newer saved note instead.");
+    return;
+  }
+  state.planSourceNoteId = note.id;
+  state.planSourceNoteTitle = note.title || "Study notes";
+  state.planSourceMaterial = note.material;
+  updatePlanSourcePresentation();
+  setActivePage("plan");
+  setStatus($("plan-status"), "Plan source linked to saved note: " + state.planSourceNoteTitle + ".", "success");
+}
+
 function renderProgress() {
   $("plans-count").textContent = String(state.studyPlans.length);
   $("quizzes-count").textContent = String(state.quizHistory.length);
+  $("notes-count").textContent = String(state.notesHistory.length);
   if (state.quizHistory.length) {
     const average = state.quizHistory.reduce((sum, item) => sum + (item.score / Math.max(item.total, 1)) * 100, 0) / state.quizHistory.length;
     $("average-score").textContent = `${Math.round(average)}%`;
@@ -345,6 +566,8 @@ function renderProgress() {
   }
   renderHistoryList($("plan-history"), state.studyPlans, "plan");
   renderHistoryList($("quiz-history"), state.quizHistory, "quiz");
+  renderNoteHistory();
+  renderQuizNoteOptions();
   $("saved-quiz-review").hidden = true;
   $("saved-quiz-review-content").replaceChildren();
 }
@@ -399,7 +622,12 @@ function renderQuiz() {
   const note = document.createElement("p");
   note.className = "empty-state";
   note.textContent = state.quizSubmitted ? "Review each answer and the explanation." : "Choose one answer for each question, then submit to see your score.";
-  heading.append(title, note);
+  const source = document.createElement("p");
+  source.className = "empty-state";
+  source.textContent = state.currentQuiz.sourceNoteTitle
+    ? "Based on saved note: " + state.currentQuiz.sourceNoteTitle
+    : "Use a saved note to keep this quiz linked to your study material.";
+  heading.append(title, source, note);
   root.append(heading);
 
   state.currentQuiz.questions.forEach((question, index) => {
@@ -464,6 +692,8 @@ async function submitQuiz() {
     id: createdAt,
     title: state.currentQuiz.title,
     topic: $("quiz-topic").value.trim(),
+    sourceNoteId: state.currentQuiz.sourceNoteId || null,
+    sourceNoteTitle: state.currentQuiz.sourceNoteTitle || "",
     difficulty: $("quiz-difficulty").value,
     score,
     total: questions.length,
@@ -512,6 +742,7 @@ $("plan-form").addEventListener("submit", async (event) => {
     weeks: Number($("plan-weeks").value),
     hours_per_day: Number($("plan-hours").value),
     goals: $("plan-goals").value.trim(),
+    source_material: state.planSourceMaterial,
   });
   if (!data) return;
   showResult($("plan-result"), $("plan-result-text"), $("plan-result-title"), "YOUR PLAN", data.text);
@@ -524,6 +755,8 @@ $("plan-form").addEventListener("submit", async (event) => {
     hoursPerDay: Number($("plan-hours").value),
     goals: $("plan-goals").value.trim(),
     planText: data.text,
+    sourceNoteId: state.planSourceNoteId || null,
+    sourceNoteTitle: state.planSourceNoteTitle || "",
     createdAt,
   });
   renderProgress();
@@ -537,6 +770,7 @@ const SUPPORTED_FILE_TYPES = new Set(["pdf", "docx", "txt", "md", "csv", "json"]
 
 function updateMaterialCount() {
   $("material-count").textContent = `${$("material-text").value.length.toLocaleString()} / ${MAX_MATERIAL_CHARS.toLocaleString()} characters`;
+  state.activeNoteId = null;
 }
 
 function fileExtension(fileName) {
@@ -726,6 +960,8 @@ fileDropZone.addEventListener("drop", (event) => {
 
 $("clear-material-btn").addEventListener("click", () => {
   $("material-text").value = "";
+  $("note-title").value = "";
+  state.activeNoteId = null;
   state.attachedFiles = [];
   renderAttachedFiles();
   updateMaterialCount();
@@ -733,18 +969,44 @@ $("clear-material-btn").addEventListener("click", () => {
   setStatus($("learn-status"), "");
 });
 
-$("use-for-quiz-btn").addEventListener("click", () => {
-  const material = $("material-text").value.trim();
-  if (!material) {
-    setStatus($("file-status"), "Add or paste study material first.", "error");
+$("save-note-btn").addEventListener("click", () => saveCurrentNote());
+
+$("use-for-quiz-btn").addEventListener("click", async () => {
+  const note = await getOrSaveCurrentNote();
+  if (note) useSavedNoteForQuiz(note);
+});
+
+$("use-for-plan-btn").addEventListener("click", async () => {
+  const note = await getOrSaveCurrentNote();
+  if (note) useSavedNoteForPlan(note);
+});
+
+$("clear-plan-source").addEventListener("click", () => {
+  state.planSourceNoteId = null;
+  state.planSourceNoteTitle = "";
+  state.planSourceMaterial = "";
+  updatePlanSourcePresentation();
+  setStatus($("plan-status"), "Note source cleared. The next plan will use its subject and goals only.");
+});
+
+$("quiz-note-select").addEventListener("change", () => {
+  const note = state.notesHistory.find((item) => item.id === $("quiz-note-select").value);
+  if (!note) {
+    state.quizSourceNoteId = null;
+    state.quizSourceNoteTitle = "";
     return;
   }
-  $("quiz-source").value = material;
-  setActivePage("quiz");
-  setStatus($("quiz-status"), "Study material copied into the quiz source field. Enter a topic and generate your quiz.", "success");
+  setQuizSourceNote(note);
+});
+
+$("quiz-source").addEventListener("input", () => {
+  state.quizSourceNoteId = null;
+  state.quizSourceNoteTitle = "";
+  $("quiz-note-select").value = "";
 });
 
 $("material-text").addEventListener("input", updateMaterialCount);
+$("note-title").addEventListener("input", () => { state.activeNoteId = null; });
 updateMaterialCount();
 
 async function runMaterialAction(buttonId, action, title) {
@@ -764,7 +1026,11 @@ async function runMaterialAction(buttonId, action, title) {
     }
   }
   const data = await runAction($(buttonId), $("learn-status"), action, payload);
-  if (data) showResult($("learn-result"), $("learn-result-text"), $("learn-result-title"), title, data.text);
+  if (data) {
+    showResult($("learn-result"), $("learn-result-text"), $("learn-result-title"), title, data.text);
+    const savedNote = state.notesHistory.find((note) => note.id === state.activeNoteId);
+    if (savedNote) setStatus($("learn-status"), title + " based on saved note: " + savedNote.title + ".", "success");
+  }
 }
 
 $("summarize-btn").addEventListener("click", () => runMaterialAction("summarize-btn", "summarize_material", "SUMMARY"));
@@ -779,11 +1045,13 @@ $("quiz-form").addEventListener("submit", async (event) => {
     $("quiz-topic").focus();
     return;
   }
+  const sourceMaterial = $("quiz-source").value.trim();
+  const linkedNote = state.notesHistory.find((note) => note.id === state.quizSourceNoteId && note.material === sourceMaterial);
   const data = await runAction($("quiz-submit"), $("quiz-status"), "generate_quiz", {
     topic,
     difficulty: $("quiz-difficulty").value,
     count: Number($("quiz-count").value),
-    source_material: $("quiz-source").value.trim(),
+    source_material: sourceMaterial,
   });
   if (!data) return;
   try {
@@ -791,7 +1059,11 @@ $("quiz-form").addEventListener("submit", async (event) => {
     if (quiz.questions.length !== Number($("quiz-count").value)) {
       throw new Error(`Expected ${$("quiz-count").value} questions, but received ${quiz.questions.length}. Try generating it again.`);
     }
-    state.currentQuiz = quiz;
+    state.currentQuiz = {
+      ...quiz,
+      sourceNoteId: linkedNote?.id || null,
+      sourceNoteTitle: linkedNote?.title || "",
+    };
     state.answers = {};
     state.quizSubmitted = false;
     renderQuiz();
