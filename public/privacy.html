@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Privacy information for the AI Study Coach browser and Anna-native editions.">
+  <meta name="robots" content="index,follow">
+  <title>Privacy — AI Study Coach</title>
+  <link rel="canonical" href="https://ai-study-coach-agents.vercel.app/privacy">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="/" aria-label="AI Study Coach home">
+        <span class="brand-mark" aria-hidden="true">SC</span>
+        <span class="brand-wordmark">AI Study Coach</span>
+      </a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="/">Home</a>
+        <a class="nav-cta" href="/app/">Launch the web app <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+  <main id="main" class="section">
+    <div class="container" style="max-width: 820px">
+      <p class="eyebrow">PRIVACY</p>
+      <h1 style="font-size:clamp(38px,5vw,58px)">Your study material and data</h1>
+      <p>This notice describes how the browser-based and Anna-native AI Study Coach editions handle information. These editions are separate and do not automatically share saved history.</p>
+      <h2>Browser-based edition</h2>
+      <ul>
+        <li>Your profile, saved note history, generated plans, and quiz history are stored in this browser's local storage. They do not automatically sync to Anna, another browser, or another device. Anyone who can use the same browser profile may be able to access that local data.</li>
+        <li>Files are parsed in your browser. When you request a summary, explanation, question answer, study plan based on notes, or quiz based on notes, the relevant text is sent to the site's server-side AI endpoint and forwarded to Google Gemini to generate a response.</li>
+        <li>The Gemini API key is held as a server-side Vercel environment variable; it is not intended to be exposed in browser code. Requests are subject to provider processing, quotas, and policies.</li>
+        <li>Do not submit passwords, government identifiers, confidential records, or material you are not authorised to share. Review AI-generated output against your course sources.</li>
+      </ul>
+      <h2>Anna-native edition</h2>
+      <ul>
+        <li>Anna handles account sign-in. The app does not ask for or store a separate password.</li>
+        <li>Study profile and activity are saved through Anna's app Storage host API, and AI actions use Anna's hosted LLM. Data handling is also subject to Anna's platform terms and privacy notices.</li>
+        <li>Text extracted from local study files is sent to Anna only when you request an AI action; the app does not upload the original file bytes for local text extraction.</li>
+      </ul>
+      <h2>Retention and control</h2>
+      <p>In the browser edition, you can clear this site's browser storage using your browser's site-data controls. Doing so permanently removes the locally saved profile, notes, plans, and quizzes from that browser. In the Anna-native edition, manage your app data through the Anna app experience and platform controls.</p>
+      <h2>Contact and project support</h2>
+      <p>For questions, feature requests, or to report an issue, use the <a href="https://github.com/Chetan-code-lrca/ai-study-coach-agents/issues" rel="noreferrer">AI Study Coach GitHub issue tracker</a>. Do not include private study notes or API keys in public issues.</p>
+      <p class="empty-state">Last updated: 21 October 2026.</p>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <a class="brand footer-brand" href="/"><span class="brand-mark" aria-hidden="true">SC</span><span class="brand-wordmark">AI Study Coach</span></a>
+      <p>Made to support learning—not replace the work of learning.</p>
+      <div class="footer-links"><a href="/privacy">Privacy</a><a href="https://github.com/Chetan-code-lrca/ai-study-coach-agents/issues" target="_blank" rel="noreferrer">Support</a></div>
+      <p class="copyright">© 2026 AI Study Coach</p>
+    </div>
+  </footer>
+</body>
+</html>
