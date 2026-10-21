@@ -45,6 +45,8 @@ const browserTextReplacements = [
   ["Could not load saved profile and activity from Anna storage. This session will still work.", "Could not load saved profile and activity from this browser. This session will still work."],
   ["Profile and activity are available in this window, but Anna storage could not save them.", "Profile and activity are available in this window, but browser storage could not save them."],
   ["Your result is ready, but Anna Storage could not save your profile or activity.", "Your result is ready, but browser storage could not save your profile or activity."],
+  ["Note is available in this window, but Anna Storage did not save it.", "Note is available in this window, but browser storage did not save it."],
+  ["Profile updated for this session, but Anna Storage could not save it. Check your storage connection.", "Profile updated for this session, but browser storage could not save it. Check your browser storage."],
   ["History is saved in Anna storage for this app.", "History is saved in this browser."],
   ["Your study goals and activity are saved with this Anna app.", "Your study goals and activity are saved in this browser."],
   ["Working with Anna's model…", "Working with the AI service…"],
