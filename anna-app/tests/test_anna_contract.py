@@ -216,8 +216,8 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn("sourceNoteId: state.planSourceNoteId || null", self.javascript)
         self.assertIn("sourceNoteId: state.currentQuiz.sourceNoteId || null", self.javascript)
         self.assertIn("attempt.sourceNoteTitle", self.javascript)
-        self.assertIn("notesHistory", self.app["description"].lower())
-        self.assertIn("linked quiz", self.app["description"].lower())
+        self.assertIn("note history", self.app["description"].lower())
+        self.assertIn("quiz linked to its source", self.app["description"].lower())
 
     def test_runtime_status_and_errors_remain_visible(self) -> None:
         self.assertIn("Working with Anna's model", self.javascript)
