@@ -5,6 +5,13 @@ on:
     branches: ["main"]
     paths:
       - "public/**"
+      - "anna-app/src/**"
+      - "anna-app/bundle/index.html"
+      - "anna-app/bundle/style.css"
+      - "api/**"
+      - "web-app/**"
+      - "scripts/build-web-app.mjs"
+      - "package.json"
       - "vercel.json"
       - "tests/public-site.test.mjs"
       - ".github/workflows/vercel-public-site-smoke.yml"
@@ -30,5 +37,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Verify public site, accessibility basics, and Vercel output
+      - name: Install web-app build dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build Vercel browser app
+        run: npm run build
+      - name: Verify public site, browser app, accessibility basics, and Vercel output
         run: node --test tests/public-site.test.mjs
