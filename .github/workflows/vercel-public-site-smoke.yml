@@ -5,6 +5,13 @@ on:
     branches: ["main"]
     paths:
       - "public/**"
+      - "anna-app/src/**"
+      - "anna-app/bundle/index.html"
+      - "anna-app/bundle/style.css"
+      - "api/**"
+      - "web-app/**"
+      - "scripts/build-web-app.mjs"
+      - "package.json"
       - "vercel.json"
       - "tests/public-site.test.mjs"
       - ".github/workflows/vercel-public-site-smoke.yml"
@@ -12,6 +19,13 @@ on:
     branches: ["main"]
     paths:
       - "public/**"
+      - "anna-app/src/**"
+      - "anna-app/bundle/index.html"
+      - "anna-app/bundle/style.css"
+      - "api/**"
+      - "web-app/**"
+      - "scripts/build-web-app.mjs"
+      - "package.json"
       - "vercel.json"
       - "tests/public-site.test.mjs"
       - ".github/workflows/vercel-public-site-smoke.yml"
@@ -30,5 +44,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Verify public site, accessibility basics, and Vercel output
-        run: node --test tests/public-site.test.mjs
+      - name: Install web-app build dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build Vercel browser app
+        run: npm run build
+      - name: Check serverless endpoint syntax
+        run: node --check api/study.js
+      - name: Verify public site, browser app, endpoint safeguards, accessibility, and Vercel output
+        run: npm test

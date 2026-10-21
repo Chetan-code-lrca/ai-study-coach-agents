@@ -574,7 +574,9 @@ function renderProgress() {
 function addStorageHistoryNotice() {
   const status = $("progress-status");
   if (status && !status.textContent) {
-    setStatus(status, "History is saved in Anna storage for this app.");
+    setStatus(status, window.__STUDY_COACH_WEB__
+      ? "History is saved in this browser only; it does not automatically sync across devices."
+      : "History is saved in Anna storage for this app.");
   }
 }
 
@@ -1138,7 +1140,7 @@ async function bootstrap() {
   try {
     anna = await AnnaAppRuntime.connect();
     await anna.window.set_title({ title: "AI Study Coach" });
-    $("connection-label").textContent = "Connected to Anna";
+    $("connection-label").textContent = window.__STUDY_COACH_WEB__ ? "Browser app ready" : "Connected to Anna";
     document.querySelector(".runtime-pill").classList.add("is-connected");
     await loadActivity();
     addStorageHistoryNotice();
