@@ -212,7 +212,6 @@ function openSavedPlan(item) {
     return;
   }
   setActivePage("plan");
-  $("plan-source-note-id").textContent = "";
   state.planSourceNoteId = item.sourceNoteId || null;
   state.planSourceNoteTitle = item.sourceNoteTitle || "";
   state.planSourceMaterial = state.notesHistory.find((note) => note.id === state.planSourceNoteId)?.material || "";
@@ -770,7 +769,6 @@ const SUPPORTED_FILE_TYPES = new Set(["pdf", "docx", "txt", "md", "csv", "json"]
 
 function updateMaterialCount() {
   $("material-count").textContent = `${$("material-text").value.length.toLocaleString()} / ${MAX_MATERIAL_CHARS.toLocaleString()} characters`;
-  state.activeNoteId = null;
 }
 
 function fileExtension(fileName) {
@@ -899,6 +897,7 @@ async function handleSelectedFiles(fileList) {
         }
         const addedText = text.slice(0, availableForText);
         const truncated = addedText.length < text.length;
+        state.activeNoteId = null;
         $("material-text").value += separator + addedText;
         state.attachedFiles.push({
           name: file.name,
@@ -1005,7 +1004,10 @@ $("quiz-source").addEventListener("input", () => {
   $("quiz-note-select").value = "";
 });
 
-$("material-text").addEventListener("input", updateMaterialCount);
+$("material-text").addEventListener("input", () => {
+  state.activeNoteId = null;
+  updateMaterialCount();
+});
 $("note-title").addEventListener("input", () => { state.activeNoteId = null; });
 updateMaterialCount();
 
