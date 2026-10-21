@@ -84,7 +84,7 @@ test("the generated browser app includes notes, planning, quizzes, and progress"
   assert.match(html, /local storage/);
   assert.match(html, /Preparing browser workspace/);
   assert.match(html, /Saved notes, study plans, and quiz results are stored in this browser\./);
-  assert.doesNotMatch(html, /Connecting to Anna|Plans and quiz results are saved to Anna storage/i);
+  assert.doesNotMatch(html, /Connecting to Anna|Saved notes, study plans, and quiz results are stored in Anna Storage/i);
   const browserScript = await read("public/app/app.js");
   assert.match(browserScript, /Browser workspace ready/);
   assert.match(browserScript, /History is saved in this browser/);
