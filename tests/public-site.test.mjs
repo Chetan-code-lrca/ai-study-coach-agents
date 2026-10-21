@@ -112,6 +112,15 @@ test("deployment is self-contained and does not depend on third-party font or sc
   assert.doesNotMatch(js, /\bfetch\s*\(|\bXMLHttpRequest\b|gtag\s*\(|analytics/i);
 });
 
+test("privacy notice covers both separate editions and the data sent for AI actions", async () => {
+  const html = await read("public/privacy.html");
+  assert.match(html, /browser's local storage/);
+  assert.match(html, /Google Gemini/);
+  assert.match(html, /Anna's hosted LLM/);
+  assert.match(html, /GitHub issue tracker/);
+  assert.match(html, /href="\\/app\\/">Launch the web app/);
+});
+
 test("site map and crawler instructions use the canonical public origin", async () => {
   const html = await read("public/index.html");
   const sitemap = await read("public/sitemap.xml");
