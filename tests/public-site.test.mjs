@@ -82,6 +82,11 @@ test("the generated browser app includes notes, planning, quizzes, and progress"
   assert.match(html, /id="quiz-note-select"/);
   assert.match(html, /id="notes-count"/);
   assert.match(html, /local storage/);
+  const browserScript = await read("public/app/app.js");
+  assert.match(browserScript, /Browser workspace ready/);
+  assert.match(browserScript, /History is saved in this browser/);
+  assert.match(browserScript, /browser storage could not save/i);
+  assert.doesNotMatch(browserScript, /Connected to Anna|Connecting to Anna|Anna storage could not save|saved with this Anna app/i);
   for (const asset of [
     "public/app/app.js",
     "public/app/style.css",
