@@ -88,7 +88,7 @@ html = html.replace(
   'id="connection-label">Preparing browser workspace</span>',
 );
 html = html.replace(
-  "Plans and quiz results are saved to Anna storage for this app.",
+  "Saved notes, study plans, and quiz results are stored in Anna Storage for this app.",
   "Saved notes, study plans, and quiz results are stored in this browser.",
 );
 html = html.replace(
