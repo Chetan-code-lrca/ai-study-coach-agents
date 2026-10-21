@@ -190,6 +190,35 @@ class AnnaContractTests(unittest.TestCase):
         self.assertIn('delete record.questions', self.history_store)
         self.assertIn('delete record.answers', self.history_store)
 
+    def test_saved_notes_are_persisted_and_linked_to_plans_and_quizzes(self) -> None:
+        for element_id in (
+            "note-title",
+            "save-note-btn",
+            "notes-history",
+            "notes-history-count",
+            "use-for-quiz-btn",
+            "use-for-plan-btn",
+            "quiz-note-select",
+            "plan-source-context",
+            "plan-source-label",
+            "clear-plan-source",
+            "notes-count",
+        ):
+            self.assertIn(f'id="{element_id}"', self.html)
+        self.assertIn("state.notesHistory = value.notesHistory", self.javascript)
+        self.assertIn('notesHistory: prepareHistoryForStorage(state.notesHistory, "note", 50, 4)', self.javascript)
+        self.assertIn('prepareHistoryForStorage(state.notesHistory, "note", 50, 4)', self.javascript)
+        self.assertIn("function renderNoteHistory()", self.javascript)
+        self.assertIn("function loadSavedNote(note)", self.javascript)
+        self.assertIn("function useSavedNoteForQuiz(note)", self.javascript)
+        self.assertIn("function useSavedNoteForPlan(note)", self.javascript)
+        self.assertIn("source_material: state.planSourceMaterial", self.javascript)
+        self.assertIn("sourceNoteId: state.planSourceNoteId || null", self.javascript)
+        self.assertIn("sourceNoteId: state.currentQuiz.sourceNoteId || null", self.javascript)
+        self.assertIn("attempt.sourceNoteTitle", self.javascript)
+        self.assertIn("notesHistory", self.app["description"].lower())
+        self.assertIn("linked quiz", self.app["description"].lower())
+
     def test_runtime_status_and_errors_remain_visible(self) -> None:
         self.assertIn("Working with Anna's model", self.javascript)
         self.assertIn('role="status"', self.html)
