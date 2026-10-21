@@ -30,6 +30,32 @@ await build({
   }],
 });
 
+// The native Anna UI source is also reused for the web edition. Rewrite
+// runtime-specific status text in this generated web bundle so it accurately
+// describes browser localStorage and the server-side Gemini endpoint.
+const appScriptPath = path.join(publicApp, "app.js");
+let appScript = await readFile(appScriptPath, "utf8");
+const browserTextReplacements = [
+  ["Connecting to Anna", "Preparing browser workspace"],
+  ["Connected to Anna", "Browser workspace ready"],
+  ["Could not connect to Anna. Open this app in Anna App Harness and retry.", "Could not connect to the browser workspace. Reload the page and retry."],
+  ["Anna denied direct LLM access. Confirm ui.host_api.llm includes \"complete\" in manifest.json, then restart the app.", "The web AI service rejected the request. Reload the page and retry."],
+  ["Anna's model request timed out. Try again, or shorten the study material if the error persists.", "The AI request timed out. Try again, or shorten the study material if the error persists."],
+  ["Anna returned an empty response. Please try again.", "The AI service returned an empty response. Please try again."],
+  ["Could not load saved profile and activity from Anna storage. This session will still work.", "Could not load saved profile and activity from this browser. This session will still work."],
+  ["Profile and activity are available in this window, but Anna storage could not save them.", "Profile and activity are available in this window, but browser storage could not save them."],
+  ["Your result is ready, but Anna Storage could not save your profile or activity.", "Your result is ready, but browser storage could not save your profile or activity."],
+  ["Note is available in this window, but Anna Storage did not save it.", "Note is available in this window, but browser storage did not save it."],
+  ["Profile updated for this session, but Anna Storage could not save it. Check your storage connection.", "Profile updated for this session, but browser storage could not save it. Check your browser storage."],
+  ["History is saved in Anna storage for this app.", "History is saved in this browser."],
+  ["Your study goals and activity are saved with this Anna app.", "Your study goals and activity are saved in this browser."],
+  ["Working with Anna's model…", "Working with the AI service…"],
+];
+for (const [nativeText, browserText] of browserTextReplacements) {
+  appScript = appScript.replaceAll(nativeText, browserText);
+}
+await writeFile(appScriptPath, appScript, "utf8");
+
 await copyFile(
   path.join(root, "anna-app", "bundle", "index.html"),
   path.join(publicApp, "index.html"),
