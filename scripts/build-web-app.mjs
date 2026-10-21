@@ -84,6 +84,14 @@ html = html.replace(
   "<title>AI Study Coach — Browser App</title>",
 );
 html = html.replace(
+  'id="connection-label">Connecting to Anna</span>',
+  'id="connection-label">Preparing browser workspace</span>',
+);
+html = html.replace(
+  "Plans and quiz results are saved to Anna storage for this app.",
+  "Saved notes, study plans, and quiz results are stored in this browser.",
+);
+html = html.replace(
   "</header>\n\n      <div class=\"intro\">",
   "</header>\n\n      <p class=\"web-edition-notice\">Browser edition: your profile, notes, plans, and quiz history are stored in this browser and do not automatically sync to Anna or other devices.</p>\n\n      <div class=\"intro\">",
 );
