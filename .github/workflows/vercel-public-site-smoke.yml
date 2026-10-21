@@ -19,6 +19,13 @@ on:
     branches: ["main"]
     paths:
       - "public/**"
+      - "anna-app/src/**"
+      - "anna-app/bundle/index.html"
+      - "anna-app/bundle/style.css"
+      - "api/**"
+      - "web-app/**"
+      - "scripts/build-web-app.mjs"
+      - "package.json"
       - "vercel.json"
       - "tests/public-site.test.mjs"
       - ".github/workflows/vercel-public-site-smoke.yml"
