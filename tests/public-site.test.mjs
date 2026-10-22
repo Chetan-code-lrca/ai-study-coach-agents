@@ -117,7 +117,7 @@ test("browser runtime uses offline study tools and does not send prompts to an A
   assert.doesNotMatch(adapter, /\\bfetch\\s*\\(/);
   assert.match(adapter, /offline-study-tools/);
   assert.match(endpoint, /status\\(410\\)/);
-  assert.match(endpoint, /does not require an external AI API key/);
+  assert.ok(endpoint.includes("does not require an external AI API key"));
 });
 
 test("deployment is self-contained and does not depend on third-party font or script CDNs", async () => {
