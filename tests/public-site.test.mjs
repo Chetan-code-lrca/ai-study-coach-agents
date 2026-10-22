@@ -123,7 +123,10 @@ test("deployment is self-contained and does not depend on third-party font or sc
 test("privacy notice covers both separate editions and the data sent for AI actions", async () => {
   const html = await read("public/privacy.html");
   assert.match(html, /browser's local storage/);
-  assert.match(html, /Google Gemini/);
+  assert.match(html, /OpenRouter/);
+  assert.match(html, /third-party model provider/);
+  assert.match(html, /Do not submit passwords, government identifiers, personally identifying records, confidential material/);
+  assert.doesNotMatch(html, /Google Gemini/);
   assert.match(html, /Anna's hosted LLM/);
   assert.match(html, /GitHub issue tracker/);
   assert.match(html, /href="\/app\/">Launch the web app/);
