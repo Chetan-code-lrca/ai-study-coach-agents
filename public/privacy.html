@@ -31,9 +31,10 @@
       <h2>Browser-based edition</h2>
       <ul>
         <li>Your profile, saved note history, generated plans, and quiz history are stored in this browser's local storage. They do not automatically sync to Anna, another browser, or another device. Anyone who can use the same browser profile may be able to access that local data.</li>
-        <li>Files are parsed in your browser. When you request a summary, explanation, question answer, study plan based on notes, or quiz based on notes, the relevant text is sent to the site's server-side AI endpoint and forwarded to Google Gemini to generate a response.</li>
-        <li>The Gemini API key is held as a server-side Vercel environment variable; it is not intended to be exposed in browser code. Requests are subject to provider processing, quotas, and policies.</li>
-        <li>Do not submit passwords, government identifiers, confidential records, or material you are not authorised to share. Review AI-generated output against your course sources.</li>
+        <li>Files are parsed in your browser. When you request a summary, explanation, question answer, study plan based on notes, or quiz based on notes, the relevant text is sent to the site's server-side AI endpoint and forwarded to OpenRouter to generate a response.</li>
+        <li>The default <code>openrouter/free</code> route may select a compatible third-party model provider. Processing, retention, and training practices can vary by provider; review OpenRouter's and the selected provider's current privacy and data policies before sending material.</li>
+        <li>The OpenRouter API key is held as a sensitive server-side Vercel environment variable and is not intended to be exposed in browser code. Requests are subject to OpenRouter and model-provider availability and free-tier limits.</li>
+        <li>Do not submit passwords, government identifiers, personally identifying records, confidential material, or study content you are not authorised to share. Review AI-generated output against your course sources.</li>
       </ul>
       <h2>Anna-native edition</h2>
       <ul>
