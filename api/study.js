@@ -54,8 +54,24 @@ function textFromCompletion(message) {
 
 function clampTokens(value) {
   const tokens = Number(value);
-  if (!Number.isFinite(tokens)) return 2500;
-  return Math.min(4096, Math.max(256, Math.floor(tokens)));
+  if (!Number.isFinite(tokens)) return 4096;
+  // Free reasoning models sometimes spend small output budgets on thinking
+  // before producing the answer. Keep enough budget for the final response.
+  return Math.min(8192, Math.max(4096, Math.floor(tokens)));
+}
+
+function openRouterRequest(apiKey, payload, timeoutMs = 18_000) {
+  return fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://ai-study-coach-agents.vercel.app",
+      "X-OpenRouter-Title": "AI Study Coach",
+    },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
 }
 
 export default async function handler(req, res) {
@@ -113,6 +129,8 @@ export default async function handler(req, res) {
       ? Math.min(1, Math.max(0, Number(body.temperature)))
       : 0.3,
     max_tokens: clampTokens(body.maxTokens),
+    // Limit hidden reasoning so free reasoning models reserve tokens for the answer.
+    reasoning: { effort: "low" },
   };
 
   // The free-model router selects an available free model that supports
@@ -122,18 +140,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const upstream = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://ai-study-coach-agents.vercel.app",
-        "X-OpenRouter-Title": "AI Study Coach",
-      },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(25_000),
-    });
-
+    const upstream = await openRouterRequest(apiKey, payload);
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
       const upstreamMessage = data?.error?.message || data?.message || "unknown provider error";
@@ -168,18 +175,53 @@ export default async function handler(req, res) {
       });
     }
 
-    const result = textFromCompletion(data?.choices?.[0]?.message);
+    let result = textFromCompletion(data?.choices?.[0]?.message);
+    let resultModel = data?.model || model;
+
     if (!result) {
-      console.error("OpenRouter returned no text", {
-        model: data?.model || model,
-        finishReason: data?.choices?.[0]?.finish_reason,
+      const firstChoice = data?.choices?.[0];
+      const usage = data?.usage;
+      console.warn("OpenRouter returned no final text; retrying once", {
+        model: resultModel,
+        finishReason: firstChoice?.finish_reason || null,
+        choiceCount: Array.isArray(data?.choices) ? data.choices.length : 0,
+        contentType: typeof firstChoice?.message?.content,
+        reasoningLength: typeof firstChoice?.message?.reasoning === "string"
+          ? firstChoice.message.reasoning.length
+          : 0,
+        completionTokens: usage?.completion_tokens ?? null,
+        reasoningTokens: usage?.completion_tokens_details?.reasoning_tokens ?? null,
       });
-      return res.status(502).json({
-        error: "The AI provider returned no text. Please shorten the request and try again.",
+
+      // The free router chooses a model per request. Retrying once can route to
+      // another free model; use a short timeout to stay within Vercel's function limit.
+      try {
+        const retryPayload = { ...payload, max_tokens: 8192 };
+        const retryResponse = await openRouterRequest(apiKey, retryPayload, 9_000);
+        const retryData = await retryResponse.json().catch(() => ({}));
+        if (retryResponse.ok) {
+          result = textFromCompletion(retryData?.choices?.[0]?.message);
+          resultModel = retryData?.model || resultModel;
+        } else {
+          console.warn("OpenRouter empty-response retry failed", {
+            status: retryResponse.status,
+            model: retryData?.model || model,
+          });
+        }
+      } catch (retryError) {
+        console.warn("OpenRouter empty-response retry could not complete", {
+          message: retryError?.message || String(retryError),
+        });
+      }
+    }
+
+    if (!result) {
+      return res.status(503).json({
+        error: "The selected free AI model returned an empty answer twice. Please retry shortly; free-model availability can vary.",
       });
     }
 
-    return res.status(200).json({ text: result, model: data?.model || model });
+    return res.status(200).json({ text: result, model: resultModel });
   } catch (error) {
     console.error("OpenRouter request error", {
       model,
