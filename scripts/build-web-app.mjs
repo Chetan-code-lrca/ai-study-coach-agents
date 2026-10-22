@@ -32,7 +32,7 @@ await build({
 
 // The native Anna UI source is also reused for the web edition. Rewrite
 // runtime-specific status text in this generated web bundle so it accurately
-// describes browser localStorage and the server-side OpenRouter endpoint.
+// describes browser localStorage and browser-only offline study tools.
 const appScriptPath = path.join(publicApp, "app.js");
 let appScript = await readFile(appScriptPath, "utf8");
 const browserTextReplacements = [
@@ -100,8 +100,12 @@ html = html.replace(
   '<p class="profile-privacy">This browser edition stores your study profile, saved note history, plans, and quiz activity in this browser\'s local storage. It does not ask for or store a password, and saved data does not automatically sync across browsers or devices.</p>',
 );
 html = html.replace(
+  "Files are extracted in your browser. Their text is sent to Anna only when you request an AI action.",
+  "Files are extracted and processed in this browser using built-in offline study tools. No study text is sent to an external AI provider.",
+);
+html = html.replace(
   /<span>Text is extracted locally\.[\s\S]*?<\/span>/,
-  "<span>Text is extracted locally. It is sent to the AI service only when you request an AI action; saved note history stays in this browser.</span>",
+  "<span>Text is extracted and processed locally in this browser using built-in study tools; saved note history stays in this browser.</span>",
 );
 html = html.replace("Powered by Anna's hosted LLM", "AI requests handled securely by the web service");
 if (!html.includes('id="save-note-btn"') || !html.includes('id="notes-history"')) {
