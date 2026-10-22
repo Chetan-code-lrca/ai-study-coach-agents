@@ -142,7 +142,7 @@ test("web AI endpoint handles OpenRouter auth, quota, and availability errors sa
   const previousFetch = globalThis.fetch;
   await withEnv({ OPENROUTER_API_KEY: "test-only-not-real" }, async () => {
     const cases = [
-      { upstreamStatus: 401, expectedStatus: 502, message: /key was rejected/i },
+      { upstreamStatus: 401, expectedStatus: 502, message: /rejected the server-side API key/i },
       { upstreamStatus: 402, expectedStatus: 402, message: /free-model access is unavailable/i },
       { upstreamStatus: 429, expectedStatus: 429, message: /rate limit/i },
       { upstreamStatus: 503, expectedStatus: 503, message: /no compatible free model/i },
