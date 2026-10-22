@@ -69,7 +69,7 @@ function statementsFrom(material) {
 function termFromLeft(left) {
   let term = String(left || "").replace(/^\s*(?:\d+(?:\.\d+)*[.)]?\s*)/, "").trim();
   for (const known of KNOWN_TERMS) {
-    if (term.toLowerCase().endsWith(known.toLowerCase())) return known;
+    if (term.toLowerCase().endsWith(known.toLowerCase())) return term.slice(term.length - known.length);
   }
   if (term.length > 60 || term.split(/\s+/).length > 5) {
     term = term.split(/\s+/).slice(-3).join(" ");
