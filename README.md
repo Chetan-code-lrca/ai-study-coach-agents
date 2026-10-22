@@ -4,18 +4,18 @@
 
 AI Study Coach is a Python/Streamlit app for building study plans, working with study material, generating quizzes, and keeping a simple record of study activity.
 
-The repository also contains older agent and service code from earlier versions of the project. The current Streamlit app is started from `streamlit_app.py`.
+The repository also contains older agent and service code from earlier versions of the project. The current Streamlit app is started from `streamlit_app.py`; it remains a separate implementation from the key-free Vercel browser edition.
 
 ## Deployment architecture
 
 This repository contains three related application surfaces:
 
 - **Vercel browser app:** the public site lives at [ai-study-coach-agents.vercel.app](https://ai-study-coach-agents.vercel.app/). The **Launch the web app** links open the actual study workspace at `/app/`, built from the reviewed Anna UI. The browser edition uses localStorage for profile, notes, plans, and quiz history; those records remain in that browser and do not sync automatically to Anna or other devices.
-- **Vercel AI endpoint:** the browser app calls a same-origin serverless function at `/api/study`. It sends prompts to OpenRouter's OpenAI-compatible Chat Completions API. Configure `OPENROUTER_API_KEY` in Vercel Project Settings → Environment Variables for Production (and Preview if needed), then redeploy. The default model is `openrouter/free`, which routes to compatible free models; an optional `OPENROUTER_MODEL` override is accepted only for `openrouter/free` or model IDs ending in `:free`, to prevent accidental paid-model requests. OpenRouter's free tier is subject to provider availability and account rate limits (currently 20 requests/minute and 50 requests/day for free models; check the live pricing/limits docs). **Never put provider keys in browser JavaScript, public files, or Git.** The endpoint uses a best-effort per-instance rate limiter, not a global quota.
+- **Vercel browser app:** study planning, note summaries, concept explanations, note-grounded answers, and quizzes use built-in rule-based/extractive tools in the browser. The browser edition does not call `/api/study`, send prompts to external model providers, or require an AI API key. It is reliable and key-free, but less flexible than a hosted language model. Profile, notes, plans, and quiz history stay in that browser's local storage and do not automatically sync to Anna or other devices.
 - **Anna-native app:** `anna-app/` is the separate Anna-runtime edition. It uses Anna's LLM and Storage host APIs and does not need the Vercel Gemini key.
 - **Streamlit edition:** `streamlit_app.py` remains an alternative Python-hosted implementation for Streamlit Community Cloud. Set `GOOGLE_API_KEY` in that service's secrets as well. Its session state is independent of both the Vercel browser app and the Anna-native app.
 
-Vercel runs the static landing page and browser UI, plus the short-lived serverless AI endpoint. It does not run a persistent Streamlit server.
+Vercel serves the static landing page and browser app. The retired `/api/study` endpoint returns `410 Gone`; the browser edition has no external AI proxy. Vercel does not run a persistent Streamlit server.
 
 
 ## Sync and update the Anna-native app on Windows
@@ -199,7 +199,7 @@ The `src/agents/` and `src/services/` modules are earlier parts of the project. 
 - profile, plan history, quiz history, and document text are session-based in the browser/Streamlit edition;
 - there is no account system or cloud synchronization;
 - uploaded documents are processed as text rather than stored in a document database;
-- the Vercel browser app requires an OpenRouter API key; its default free-model route is subject to free-tier availability and quotas;
+- the Vercel browser app runs key-free offline study tools; generated content is extractive or rule-based rather than full LLM output;
 - the Streamlit edition and older agent/service modules still use Gemini and require a valid Google API key;
 - the older agent/service modules use a different implementation from the maintained Streamlit frontend.
 
