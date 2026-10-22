@@ -136,7 +136,7 @@ function generateStudyPlan(prompt) {
     "# Study plan: " + subject, "",
     "> Offline mode: this plan is built in your browser from your settings and extracted notes. It does not use a hosted AI model; check the sequence against your syllabus.", "",
     "**Level:** " + level + "  ", "**Duration:** " + weeks + " week(s)  ",
-    "**Daily time:** " + hours + " hour(s)  ", "**Goal:** " + goals, ""
+    "**Daily time:** " + hours + " hour(s)  ", "**Daily session limit:** " + minutes + " minutes  ", "**Goal:** " + goals, ""
   ];
   for (let week = 0; week < weeks; week += 1) {
     lines.push("## Week " + (week + 1) + ": " + topics[(week * 3) % topics.length], "");
