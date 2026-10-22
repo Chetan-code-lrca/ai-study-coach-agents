@@ -185,10 +185,10 @@ async function runAction(button, statusElement, action, payload) {
   const oldLabel = button.textContent;
   button.disabled = true;
   button.setAttribute("aria-busy", "true");
-  setStatus(statusElement, "Working with Anna's model…");
+  setStatus(statusElement, window.__STUDY_COACH_WEB__ ? "Working with offline study tools…" : "Working with Anna's model…");
   try {
     const data = await completeStudyAction(action, payload);
-    setStatus(statusElement, "Done.", "success");
+    setStatus(statusElement, window.__STUDY_COACH_WEB__ && data.model === "offline-study-tools" ? "Done — offline mode; no API key or external AI required." : "Done.", "success");
     return data;
   } catch (error) {
     setStatus(statusElement, getErrorMessage(error), "error");
