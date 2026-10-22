@@ -1,34 +1,21 @@
-// Adapter for the browser-hosted edition. The native Anna app keeps using
-// the official Anna App Runtime; this adapter stores records in this browser
-// and sends AI requests to the server-side /api/study endpoint.
+// Browser-only adapter for the Vercel edition.
+// All study generation runs locally in this browser; no external AI API is called.
+import { generateOfflineStudyResponse } from "./offline-study.js";
+
 window.__STUDY_COACH_WEB__ = true;
 
-const storageKey = (key) => `ai-study-coach-web:${String(key)}`;
+const storageKey = (key) => "ai-study-coach-web:" + String(key);
 
 export const AnnaAppRuntime = {
   async connect() {
     return {
       llm: {
         async complete(payload) {
-          const response = await fetch("/api/study", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            cache: "no-store",
-            body: JSON.stringify(payload),
-          });
-          let data;
-          try {
-            data = await response.json();
-          } catch {
-            throw new Error("The web AI service returned an invalid response. Please try again.");
+          const text = generateOfflineStudyResponse(payload);
+          if (typeof text !== "string" || !text.trim()) {
+            throw new Error("The built-in offline study tools could not produce a result for this input.");
           }
-          if (!response.ok) {
-            throw new Error(data?.error || `AI request failed (${response.status}).`);
-          }
-          if (typeof data?.text !== "string" || !data.text.trim()) {
-            throw new Error("The AI service returned an empty response. Please try again.");
-          }
-          return { content: data.text, model: data.model || "Gemini" };
+          return { content: text, model: "offline-study-tools" };
         },
       },
       storage: {
