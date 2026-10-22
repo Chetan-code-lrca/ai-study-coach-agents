@@ -1,5 +1,5 @@
 const KNOWN_TERMS = [
-  "semi-supervised learning", "supervised learning", "unsupervised learning",
+  "semi-supervised learning", "unsupervised learning", "supervised learning",
   "reinforcement learning", "machine learning", "deep learning", "linear regression",
   "logistic regression", "decision tree", "random forest", "support vector machine",
   "gradient descent", "confusion matrix", "cross validation", "overfitting",
