@@ -32,7 +32,7 @@ await build({
 
 // The native Anna UI source is also reused for the web edition. Rewrite
 // runtime-specific status text in this generated web bundle so it accurately
-// describes browser localStorage and the server-side Gemini endpoint.
+// describes browser localStorage and the server-side OpenRouter endpoint.
 const appScriptPath = path.join(publicApp, "app.js");
 let appScript = await readFile(appScriptPath, "utf8");
 const browserTextReplacements = [
