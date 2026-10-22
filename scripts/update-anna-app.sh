@@ -111,7 +111,7 @@ if [[ "$PUSH_TO_ANNA" == "true" ]]; then
   anna-app apps push
   echo
   echo "Anna working draft updated. This is not a public release."
-  echo "Open https://anna.partners/developer, install/test the draft, then cut version 0.1.1 and complete the platform review/publish steps."
+  echo "Open https://anna.partners/developer, install/test the draft, then cut version 0.1.2 and complete the platform review/publish steps."
 else
   echo
   echo "All local build and validation checks passed."
