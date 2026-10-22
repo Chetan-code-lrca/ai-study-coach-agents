@@ -1,5 +1,5 @@
 const KNOWN_TERMS = [
-  "semi-supervised learning", "supervised learning", "unsupervised learning",
+  "semi-supervised learning", "unsupervised learning", "supervised learning",
   "reinforcement learning", "machine learning", "deep learning", "linear regression",
   "logistic regression", "decision tree", "random forest", "support vector machine",
   "gradient descent", "confusion matrix", "cross validation", "overfitting",
@@ -69,7 +69,7 @@ function statementsFrom(material) {
 function termFromLeft(left) {
   let term = String(left || "").replace(/^\s*(?:\d+(?:\.\d+)*[.)]?\s*)/, "").trim();
   for (const known of KNOWN_TERMS) {
-    if (term.toLowerCase().endsWith(known.toLowerCase())) return known;
+    if (term.toLowerCase().endsWith(known.toLowerCase())) return term.slice(term.length - known.length);
   }
   if (term.length > 60 || term.split(/\s+/).length > 5) {
     term = term.split(/\s+/).slice(-3).join(" ");
@@ -136,7 +136,7 @@ function generateStudyPlan(prompt) {
     "# Study plan: " + subject, "",
     "> Offline mode: this plan is built in your browser from your settings and extracted notes. It does not use a hosted AI model; check the sequence against your syllabus.", "",
     "**Level:** " + level + "  ", "**Duration:** " + weeks + " week(s)  ",
-    "**Daily time:** " + hours + " hour(s)  ", "**Goal:** " + goals, ""
+    "**Daily time:** " + hours + " hour(s)  ", "**Daily session limit:** " + minutes + " minutes  ", "**Goal:** " + goals, ""
   ];
   for (let week = 0; week < weeks; week += 1) {
     lines.push("## Week " + (week + 1) + ": " + topics[(week * 3) % topics.length], "");
