@@ -96,6 +96,12 @@ export default async function handler(req, res) {
   }
 
   const model = String(process.env.OPENROUTER_MODEL || "openrouter/free").trim();
+  if (model !== "openrouter/free" && !model.endsWith(":free")) {
+    return res.status(503).json({
+      error: "This deployment is configured for free OpenRouter models only. Set OPENROUTER_MODEL to openrouter/free or a model ID ending in :free.",
+    });
+  }
+
   const messages = [];
   if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
   messages.push({ role: "user", content: prompt });
