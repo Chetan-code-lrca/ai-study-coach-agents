@@ -114,9 +114,9 @@ test("browser runtime uses offline study tools and does not send prompts to an A
   const adapter = await read("web-app/anna-runtime.js");
   const endpoint = await read("api/study.js");
   assert.match(adapter, /generateOfflineStudyResponse/);
-  assert.doesNotMatch(adapter, /\\bfetch\\s*\\(/);
+  assert.equal(adapter.includes("fetch("), false);
   assert.match(adapter, /offline-study-tools/);
-  assert.match(endpoint, /status\\(410\\)/);
+  assert.ok(endpoint.includes("status(410)"));
   assert.ok(endpoint.includes("does not require an external AI API key"));
 });
 
