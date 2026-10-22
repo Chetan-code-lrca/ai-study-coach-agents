@@ -107,6 +107,24 @@ test("web AI endpoint forwards prompts server-side to OpenRouter's free router",
   });
 });
 
+test("web AI endpoint refuses a model override that is not explicitly free", async () => {
+  await withEnv({
+    OPENROUTER_API_KEY: "test-only-not-real",
+    OPENROUTER_MODEL: "example/paid-model",
+  }, async () => {
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = async () => { throw new Error("fetch must not run for a paid model override"); };
+    try {
+      const res = mockResponse();
+      await handler(request("Summarize my notes.", "198.51.100.91"), res);
+      assert.equal(res.statusCode, 503);
+      assert.match(res.body.error, /free OpenRouter models only/i);
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+  });
+});
+
 test("web AI endpoint supports a configured model and requests JSON mode when needed", async () => {
   const previousFetch = globalThis.fetch;
   await withEnv({
