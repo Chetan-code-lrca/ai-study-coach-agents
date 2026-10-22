@@ -1,7 +1,7 @@
 const WINDOW_MS = 60_000;
 const LIMIT_PER_WINDOW = 15;
-// Best-effort per-instance rate limit. Configure provider quotas and monitor
-// usage as well; serverless memory is not a globally shared rate limiter.
+// Best-effort per-instance rate limit. OpenRouter also enforces free-tier
+// account limits; this in-memory guard is not a global or daily quota.
 const requestLog = new Map();
 
 function allowRequest(ip, now = Date.now()) {
@@ -39,6 +39,19 @@ function textFromMessages(messages) {
     .trim();
 }
 
+function textFromCompletion(message) {
+  const content = message?.content;
+  if (typeof content === "string") return content.trim();
+  if (Array.isArray(content)) {
+    return content
+      .filter((part) => part && typeof part.text === "string")
+      .map((part) => part.text)
+      .join("\n")
+      .trim();
+  }
+  return "";
+}
+
 function clampTokens(value) {
   const tokens = Number(value);
   if (!Number.isFinite(tokens)) return 2500;
@@ -54,10 +67,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Use POST to request an AI response." });
   }
 
-  const apiKey = process.env.GOOGLE_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return res.status(503).json({
-      error: "The web AI service is not configured yet. The site owner must add GOOGLE_API_KEY in Vercel Project Settings → Environment Variables, then redeploy.",
+      error: "The web AI service is not configured yet. Add OPENROUTER_API_KEY in Vercel Project Settings → Environment Variables, then redeploy.",
     });
   }
 
@@ -82,60 +95,92 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: "Too many AI requests from this address. Wait a minute before trying again." });
   }
 
-  const model = String(process.env.GEMINI_MODEL || "gemini-3.8-flash").trim();
-  const generationConfig = {
+  const model = String(process.env.OPENROUTER_MODEL || "openrouter/free").trim();
+  const messages = [];
+  if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
+  messages.push({ role: "user", content: prompt });
+
+  const payload = {
+    model,
+    messages,
     temperature: Number.isFinite(Number(body.temperature))
       ? Math.min(1, Math.max(0, Number(body.temperature)))
       : 0.3,
-    maxOutputTokens: clampTokens(body.maxTokens),
+    max_tokens: clampTokens(body.maxTokens),
   };
+
+  // The free-model router selects an available free model that supports
+  // required capabilities such as structured output where supported.
   if (/Return valid JSON only|valid JSON only with this exact shape/i.test(prompt)) {
-    generationConfig.responseMimeType = "application/json";
+    payload.response_format = { type: "json_object" };
   }
 
   try {
-    const upstream = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined,
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig,
-        }),
-        signal: AbortSignal.timeout(25_000),
+    const upstream = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://ai-study-coach-agents.vercel.app",
+        "X-OpenRouter-Title": "AI Study Coach",
       },
-    );
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(25_000),
+    });
 
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
-      if (upstream.status === 429) {
-        return res.status(429).json({ error: "The AI provider quota is temporarily busy. Wait a moment and retry." });
+      const upstreamMessage = data?.error?.message || data?.message || "unknown provider error";
+      console.error("OpenRouter request failed", {
+        status: upstream.status,
+        model,
+        message: String(upstreamMessage).slice(0, 500),
+      });
+
+      if (upstream.status === 401 || upstream.status === 403) {
+        return res.status(502).json({
+          error: "OpenRouter rejected the server-side API key. Check OPENROUTER_API_KEY in Vercel and redeploy.",
+        });
       }
-      console.error("Gemini request failed", { status: upstream.status, model, message: data?.error?.message });
+      if (upstream.status === 402) {
+        return res.status(402).json({
+          error: "OpenRouter reports that free-model access is unavailable for this account right now. Check the account's free-tier limits and activity.",
+        });
+      }
+      if (upstream.status === 429) {
+        return res.status(429).json({
+          error: "OpenRouter's free-model rate limit was reached or providers are busy. Wait a moment and retry.",
+        });
+      }
+      if (upstream.status === 503 || upstream.status >= 500) {
+        return res.status(503).json({
+          error: "No compatible free model is available right now. Please retry in a little while.",
+        });
+      }
       return res.status(502).json({
-        error: upstream.status === 401 || upstream.status === 403
-          ? "The server-side Gemini key was rejected. Check GOOGLE_API_KEY in Vercel and redeploy."
-          : "The AI provider could not complete this request. Check the configured model and provider quota, then retry.",
+        error: "OpenRouter could not complete this request. Check the configured model and request limits, then retry.",
       });
     }
 
-    const result = data?.candidates?.[0]?.content?.parts
-      ?.filter((part) => typeof part.text === "string")
-      .map((part) => part.text)
-      .join("\n")
-      .trim();
+    const result = textFromCompletion(data?.choices?.[0]?.message);
     if (!result) {
-      console.error("Gemini returned no text", { model, finishReason: data?.candidates?.[0]?.finishReason });
-      return res.status(502).json({ error: "The AI provider returned no text. Please shorten the request and try again." });
+      console.error("OpenRouter returned no text", {
+        model: data?.model || model,
+        finishReason: data?.choices?.[0]?.finish_reason,
+      });
+      return res.status(502).json({
+        error: "The AI provider returned no text. Please shorten the request and try again.",
+      });
     }
-    return res.status(200).json({ text: result, model });
+
+    return res.status(200).json({ text: result, model: data?.model || model });
   } catch (error) {
-    console.error("Gemini request error", { model, message: error?.message || String(error) });
-    return res.status(504).json({ error: "The AI request timed out or the provider was unreachable. Please try again." });
+    console.error("OpenRouter request error", {
+      model,
+      message: error?.message || String(error),
+    });
+    return res.status(504).json({
+      error: "The AI request timed out or the provider was unreachable. Please try again.",
+    });
   }
 }
