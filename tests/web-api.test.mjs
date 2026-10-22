@@ -99,8 +99,80 @@ test("web AI endpoint forwards prompts server-side to OpenRouter's free router",
       assert.equal(sent.messages[1].role, "user");
       assert.equal(sent.messages[1].content, "Summarize my notes.");
       assert.equal(sent.temperature, 0.3);
-      assert.equal(sent.max_tokens, 1200);
+      assert.equal(sent.max_tokens, 4096);
+      assert.deepEqual(sent.reasoning, { effort: "low" });
       assert.ok(!JSON.stringify(res.body).includes("test-only-not-real"));
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+  });
+});
+
+test("web AI endpoint retries once when a free reasoning model returns empty content", async () => {
+  const previousFetch = globalThis.fetch;
+  await withEnv({
+    OPENROUTER_API_KEY: "test-only-not-real",
+    OPENROUTER_MODEL: null,
+  }, async () => {
+    const requests = [];
+    globalThis.fetch = async (_url, options) => {
+      const sent = JSON.parse(options.body);
+      requests.push(sent);
+      if (requests.length === 1) {
+        return {
+          ok: true,
+          status: 200,
+          async json() {
+            return {
+              model: "example/first-free-model",
+              choices: [{ message: { content: "", reasoning: "brief reasoning only" }, finish_reason: "length" }],
+              usage: { completion_tokens: 4096, completion_tokens_details: { reasoning_tokens: 4096 } },
+            };
+          },
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {
+            model: "example/second-free-model",
+            choices: [{ message: { content: "Here is the quiz." }, finish_reason: "stop" }],
+          };
+        },
+      };
+    };
+    try {
+      const res = mockResponse();
+      await handler(request("Create a five-question quiz.", "198.51.100.92"), res);
+      assert.equal(res.statusCode, 200);
+      assert.equal(res.body.text, "Here is the quiz.");
+      assert.equal(res.body.model, "example/second-free-model");
+      assert.equal(requests.length, 2);
+      assert.equal(requests[0].max_tokens, 4096);
+      assert.equal(requests[0].reasoning.effort, "low");
+      assert.equal(requests[1].max_tokens, 8192);
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
+  });
+});
+
+test("web AI endpoint gives a retryable safe error if the free model returns no text twice", async () => {
+  const previousFetch = globalThis.fetch;
+  await withEnv({ OPENROUTER_API_KEY: "test-only-not-real" }, async () => {
+    globalThis.fetch = async () => ({
+      ok: true,
+      status: 200,
+      async json() {
+        return { choices: [{ message: { content: "" }, finish_reason: "length" }] };
+      },
+    });
+    try {
+      const res = mockResponse();
+      await handler(request("Summarize my notes.", "198.51.100.93"), res);
+      assert.equal(res.statusCode, 503);
+      assert.match(res.body.error, /returned an empty answer twice/i);
     } finally {
       globalThis.fetch = previousFetch;
     }
