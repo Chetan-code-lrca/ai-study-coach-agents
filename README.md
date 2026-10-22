@@ -11,7 +11,7 @@ The repository also contains older agent and service code from earlier versions 
 This repository contains three related application surfaces:
 
 - **Vercel browser app:** the public site lives at [ai-study-coach-agents.vercel.app](https://ai-study-coach-agents.vercel.app/). The **Launch the web app** links open the actual study workspace at `/app/`, built from the reviewed Anna UI. The browser edition uses localStorage for profile, notes, plans, and quiz history; those records remain in that browser and do not sync automatically to Anna or other devices.
-- **Vercel AI endpoint:** the browser app calls a same-origin serverless function at `/api/study`. It sends prompts to the Gemini API using a server-side environment variable. Configure `GOOGLE_API_KEY` in Vercel Project Settings → Environment Variables for Production (and Preview if needed), then redeploy. Set the optional `GEMINI_MODEL` variable to select a model; the default is `gemini-3.8-flash`. **Never put provider keys in browser JavaScript, public files, or Git.** Monitor Gemini usage and set provider quotas; the API includes only best-effort per-instance rate limiting.
+- **Vercel AI endpoint:** the browser app calls a same-origin serverless function at `/api/study`. It sends prompts to OpenRouter's OpenAI-compatible Chat Completions API. Configure `OPENROUTER_API_KEY` in Vercel Project Settings → Environment Variables for Production (and Preview if needed), then redeploy. The default model is `openrouter/free`, which routes to compatible free models; set `OPENROUTER_MODEL` only if you deliberately want to select another model. OpenRouter's free tier is subject to provider availability and account rate limits (currently 20 requests/minute and 50 requests/day for free models; check the live pricing/limits docs). **Never put provider keys in browser JavaScript, public files, or Git.** The endpoint uses a best-effort per-instance rate limiter, not a global quota.
 - **Anna-native app:** `anna-app/` is the separate Anna-runtime edition. It uses Anna's LLM and Storage host APIs and does not need the Vercel Gemini key.
 - **Streamlit edition:** `streamlit_app.py` remains an alternative Python-hosted implementation for Streamlit Community Cloud. Set `GOOGLE_API_KEY` in that service's secrets as well. Its session state is independent of both the Vercel browser app and the Anna-native app.
 
@@ -196,10 +196,11 @@ The `src/agents/` and `src/services/` modules are earlier parts of the project. 
 
 ## Current limitations
 
-- profile, plan history, quiz history, and document text are session-based;
+- profile, plan history, quiz history, and document text are session-based in the browser/Streamlit edition;
 - there is no account system or cloud synchronization;
 - uploaded documents are processed as text rather than stored in a document database;
-- Gemini features require a valid Google API key;
+- the Vercel browser app requires an OpenRouter API key; its default free-model route is subject to free-tier availability and quotas;
+- the Streamlit edition and older agent/service modules still use Gemini and require a valid Google API key;
 - the older agent/service modules use a different implementation from the maintained Streamlit frontend.
 
 ## License
