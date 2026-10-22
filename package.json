@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-web-app.mjs",
-    "test": "node --test tests/public-site.test.mjs tests/web-api.test.mjs"
+    "test": "node --test tests/public-site.test.mjs tests/web-api.test.mjs tests/offline-study.test.mjs"
   },
   "dependencies": {
     "esbuild": "0.28.2",
