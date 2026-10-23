@@ -52,10 +52,12 @@ function mergeDuplicate(kept, incoming) {
     ...(incomingIsNewer ? incoming : {}),
     id: kept.id || incoming.id,
     title: (incomingIsNewer ? incoming.title : kept.title) || kept.title || incoming.title || "Study notes",
-    sourceFiles: [...new Set([
-      ...(Array.isArray(kept.sourceFiles) ? kept.sourceFiles : []),
-      ...(Array.isArray(incoming.sourceFiles) ? incoming.sourceFiles : []),
-    ])],
+    sourceFiles: [
+      ...(Array.isArray(incomingIsNewer ? incoming.sourceFiles : kept.sourceFiles) &&
+          (incomingIsNewer ? incoming.sourceFiles : kept.sourceFiles).length
+        ? (incomingIsNewer ? incoming.sourceFiles : kept.sourceFiles)
+        : (Array.isArray(kept.sourceFiles) ? kept.sourceFiles : incoming.sourceFiles || [])),
+    ],
     createdAt: incomingIsNewer ? (incoming.createdAt || kept.createdAt) : (kept.createdAt || incoming.createdAt),
   };
 
