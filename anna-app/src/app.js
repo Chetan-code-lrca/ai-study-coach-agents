@@ -543,7 +543,7 @@ async function saveCurrentNote({ silent = false } = {}) {
     renderProgress();
     if (!silent) {
       if (!persisted) {
-        setStatus($("file-status"), "The note is available in this window, but browser/Anna storage could not save it.", "error");
+        setStatus($("file-status"), "The note is available for this session, but saving its history failed.", "error");
       } else if (isSameSavedNote) {
         setStatus($("file-status"), "This file is already saved. Kept one copy in note history.", "success");
         showToast("Duplicate import detected; kept one saved note.");
