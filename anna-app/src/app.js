@@ -4,6 +4,7 @@ import mammoth from "mammoth";
 import { buildStudyRequest } from "./study-prompts.js";
 import { renderMarkdown } from "./markdown.js";
 import { prepareHistoryForStorage } from "./history-store.js";
+import { deduplicateNotesHistory, noteIdentityKey } from "./note-dedupe.js";
 
 const STORAGE_KEY = "ai-study-coach:activity:v1";
 
@@ -18,6 +19,7 @@ const state = {
   quizSubmitted: false,
   attachedFiles: [],
   activeNoteId: null,
+  activeNoteSourceFiles: [],
   quizSourceNoteId: null,
   quizSourceNoteTitle: "",
   planSourceNoteId: null,
@@ -140,7 +142,23 @@ function applyProfilePresentation() {
   }
 }
 
+function deduplicateNotesAndReferences() {
+  const result = deduplicateNotesHistory(state.notesHistory);
+  state.notesHistory = result.notes;
+  const canonicalById = new Map(state.notesHistory.filter((note) => note.id).map((note) => [note.id, note]));
+  for (const item of [...state.studyPlans, ...state.quizHistory]) {
+    if (!item?.sourceNoteId) continue;
+    const canonicalId = result.idMap.get(item.sourceNoteId);
+    if (!canonicalId) continue;
+    item.sourceNoteId = canonicalId;
+    const source = canonicalById.get(canonicalId);
+    if (source?.title) item.sourceNoteTitle = source.title;
+  }
+  return result.changed;
+}
+
 async function loadActivity() {
+  let historyCleaned = false;
   try {
     const stored = await anna.storage.get({ key: STORAGE_KEY });
     let value = stored && typeof stored === "object" && "value" in stored ? stored.value : stored;
@@ -148,7 +166,10 @@ async function loadActivity() {
     if (value && typeof value === "object") {
       if (Array.isArray(value.studyPlans)) state.studyPlans = value.studyPlans;
       if (Array.isArray(value.quizHistory)) state.quizHistory = value.quizHistory;
-      if (Array.isArray(value.notesHistory)) state.notesHistory = value.notesHistory;
+      if (Array.isArray(value.notesHistory)) {
+        state.notesHistory = value.notesHistory;
+        historyCleaned = deduplicateNotesAndReferences();
+      }
       state.profile = normalizeProfile(value.profile);
     }
   } catch (error) {
@@ -157,6 +178,10 @@ async function loadActivity() {
   populateProfileForm();
   applyProfilePresentation();
   renderProgress();
+  if (historyCleaned) {
+    await saveActivity();
+    showToast("Repeated imports were grouped into one saved note per file.");
+  }
 }
 
 async function saveActivity() {
@@ -458,6 +483,7 @@ function loadSavedNote(note) {
     return;
   }
   state.activeNoteId = note.id;
+  state.activeNoteSourceFiles = Array.isArray(note.sourceFiles) ? [...note.sourceFiles] : [];
   $("note-title").value = note.title || "Study notes";
   $("material-text").value = note.material;
   state.attachedFiles = [];
@@ -479,20 +505,60 @@ async function saveCurrentNote({ silent = false } = {}) {
     return null;
   }
   const title = ($("note-title").value.trim() || deriveNoteTitle(material)).slice(0, 120);
-  const existing = state.notesHistory.find((note) => note.id === state.activeNoteId);
-  if (existing && existing.material === material && existing.title === title) return existing;
-
-  const note = {
+  const sourceFiles = [...new Set(
+    (state.attachedFiles.length
+      ? state.attachedFiles.map((file) => file.name)
+      : state.activeNoteSourceFiles
+    ).filter(Boolean),
+  )];
+  const createdAt = new Date().toISOString();
+  const candidate = {
     id: "note-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
     title,
     material,
     characters: material.length,
-    sourceFiles: state.attachedFiles.map((file) => file.name).filter(Boolean),
-    createdAt: new Date().toISOString(),
+    sourceFiles,
+    createdAt,
   };
-  state.notesHistory.push(note);
+  const duplicate = state.notesHistory.find((note) => noteIdentityKey(note) === noteIdentityKey(candidate));
+  const isSameSavedNote = duplicate && duplicate.material === material && duplicate.title === title && !duplicate.materialTruncated;
+
+  if (duplicate) {
+    if (!isSameSavedNote) {
+      Object.assign(duplicate, {
+        title,
+        material,
+        characters: material.length,
+        sourceFiles: sourceFiles.length ? sourceFiles : (duplicate.sourceFiles || []),
+        createdAt,
+        materialTruncated: false,
+      });
+      delete duplicate.materialPreview;
+    }
+    state.activeNoteId = duplicate.id;
+    state.activeNoteSourceFiles = [...(duplicate.sourceFiles || [])];
+    $("note-title").value = duplicate.title || title;
+    const historyCleaned = deduplicateNotesAndReferences();
+    const persisted = (isSameSavedNote && !historyCleaned) ? true : await saveActivity();
+    renderProgress();
+    if (!silent) {
+      if (!persisted) {
+        setStatus($("file-status"), "The note is available for this session, but saving its history failed.", "error");
+      } else if (isSameSavedNote) {
+        setStatus($("file-status"), "This file is already saved. Kept one copy in note history.", "success");
+        showToast("Duplicate import detected; kept one saved note.");
+      } else {
+        setStatus($("file-status"), "Updated the existing saved note for this file instead of creating a duplicate.", "success");
+        showToast("Updated the existing note.");
+      }
+    }
+    return duplicate;
+  }
+
+  state.notesHistory.push(candidate);
   state.notesHistory = state.notesHistory.slice(-50);
-  state.activeNoteId = note.id;
+  state.activeNoteId = candidate.id;
+  state.activeNoteSourceFiles = [...sourceFiles];
   $("note-title").value = title;
   const persisted = await saveActivity();
   renderProgress();
@@ -504,7 +570,7 @@ async function saveCurrentNote({ silent = false } = {}) {
       setStatus($("file-status"), "Note is available in this window, but Anna Storage did not save it.", "error");
     }
   }
-  return note;
+  return candidate;
 }
 
 async function getOrSaveCurrentNote() {
@@ -963,6 +1029,7 @@ $("clear-material-btn").addEventListener("click", () => {
   $("material-text").value = "";
   $("note-title").value = "";
   state.activeNoteId = null;
+  state.activeNoteSourceFiles = [];
   state.attachedFiles = [];
   renderAttachedFiles();
   updateMaterialCount();
