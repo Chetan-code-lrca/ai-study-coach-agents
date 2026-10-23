@@ -76,9 +76,20 @@ test("landing page links directly to the working browser app", async () => {
 test("the generated browser app includes notes, planning, quizzes, and progress", async () => {
   const html = await read("public/app/index.html");
   assert.match(html, /AI Study Coach — Browser App/);
+  assert.match(html, /id="page-dashboard"/);
+  assert.match(html, /data-page="dashboard">Overview/);
+  assert.match(html, /dashboard-action-grid/);
+  assert.match(html, /id="dashboard-notes"/);
+  assert.match(html, /id="dashboard-activity"/);
+  assert.match(html, /data-open-page="quiz"/);
   assert.match(html, /id="save-note-btn"/);
   assert.match(html, /id="notes-history"/);
   assert.match(html, /id="use-for-plan-btn"/);
+  const dashboardCss = await read("public/app/style.css");
+  assert.match(dashboardCss, /\.workspace-layout\s*\{[^}]*grid-template-columns/s);
+  assert.match(dashboardCss, /\.dashboard-action-grid\s*\{/);
+  assert.match(dashboardCss, /@media \(max-width: 760px\)/);
+  assert.match(html, /study-coach:activity-updated/);
   assert.match(html, /id="quiz-note-select"/);
   assert.match(html, /id="notes-count"/);
   assert.match(html, /local storage/);
@@ -116,6 +127,7 @@ test("browser runtime uses offline study tools and does not send prompts to an A
   assert.match(adapter, /generateOfflineStudyResponse/);
   assert.equal(adapter.includes("fetch("), false);
   assert.match(adapter, /offline-study-tools/);
+  assert.match(adapter, /study-coach:activity-updated/);
   assert.ok(endpoint.includes("status(410)"));
   assert.ok(endpoint.includes("does not require an external AI API key"));
 });
