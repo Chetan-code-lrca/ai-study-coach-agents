@@ -44,7 +44,7 @@ Linux / WSL / macOS:
     anna-app login --host https://anna.partners
     bash scripts/update-anna-app.sh --push-to-anna
 
-The current Anna-native app version is **0.1.2**. A successful `anna-app apps push` updates the working draft; it does not itself publish an official release. In Anna Developer Console, install and test the draft, cut version `0.1.2`, and complete the platform's review/publish steps before treating it as released to users.
+The latest version shown in Anna Developer Console was **0.1.3**, cut before the latest duplicate-note handling change. A successful `anna-app apps push` updates the working draft; it does not itself publish a release. Run the local checks and push the working draft, install and test it in Anna (including note deduplication, source-linked plans/quizzes, and persistence), then cut **0.1.4** and submit that new cut for review. Do not submit/publish the older `0.1.3` snapshot if you want to include the latest code. The Vercel-only full-width dashboard styling is built for the browser deployment and is not part of the Anna-native UI bundle.
 
 
 
