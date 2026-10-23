@@ -31,6 +31,7 @@ export const AnnaAppRuntime = {
         async set({ key, value }) {
           try {
             localStorage.setItem(storageKey(key), JSON.stringify(value));
+            window.dispatchEvent(new CustomEvent("study-coach:activity-updated", { detail: { key } }));
             return { ok: true };
           } catch (error) {
             if (error?.name === "QuotaExceededError") {
