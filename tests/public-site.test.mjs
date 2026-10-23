@@ -87,7 +87,7 @@ test("the generated browser app includes notes, planning, quizzes, and progress"
   assert.match(html, /id="use-for-plan-btn"/);
   const dashboardCss = await read("public/app/style.css");
   assert.match(dashboardCss, /\.app-shell\s*\{\s*width:\s*100%;\s*max-width:\s*none;/);
-  assert.match(dashboardCss, /\.workspace-layout\s*\{[^}]*width:\s*100%/s);
+  assert.match(dashboardCss, /\.workspace-layout,\s*\.workspace-main,\s*\.dashboard-page\s*\{\s*width:\s*100%;\s*max-width:\s*none;/);
   assert.match(dashboardCss, /\.workspace-layout\s*\{[^}]*grid-template-columns/s);
   const noteUiSource = await read("anna-app/src/app.js");
   const noteDedupeSource = await read("anna-app/src/note-dedupe.js");
