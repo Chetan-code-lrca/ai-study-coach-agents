@@ -93,7 +93,7 @@ try {
             Write-Host "`n[8/8] Pushing the validated bundle to Anna's working draft..."
             Invoke-Checked "anna-app" @("apps", "push")
             Write-Host "`nAnna working draft updated. This is not a public release."
-            Write-Host "Open https://anna.partners/developer, install/test the draft, then cut version 0.1.2 and complete the platform review/publish steps."
+            Write-Host "Open https://anna.partners/developer and install/test the working draft. Version 0.1.3 was cut before the latest note-deduplication changes; after all checks pass, cut version 0.1.4 and submit that new version for review. Do not publish the older 0.1.3 snapshot."
         } else {
             Write-Host "`nAll local build and validation checks passed."
             Write-Host "After local checks pass, rerun: .\scripts\Update-AnnaApp.ps1 -PushToAnna"
