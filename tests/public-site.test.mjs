@@ -69,7 +69,7 @@ test("landing page links directly to the working browser app", async () => {
   }
   assert.match(html, /href="\/app\/">Launch the web app/);
   assert.match(html, /href="\/app\/">Open AI Study Coach/);
-  assert.match(html, /The web edition stores your activity in this browser/);
+  assert.match(html, /The web edition keeps your activity in this browser and uses built-in offline study tools/);
   assert.doesNotMatch(html, /href="(?:#|javascript:)"\s*>\s*(?:Launch|Open|Start) app/i);
 });
 
