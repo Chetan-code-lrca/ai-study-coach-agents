@@ -86,7 +86,15 @@ test("the generated browser app includes notes, planning, quizzes, and progress"
   assert.match(html, /id="notes-history"/);
   assert.match(html, /id="use-for-plan-btn"/);
   const dashboardCss = await read("public/app/style.css");
+  assert.match(dashboardCss, /\.app-shell\s*\{\s*width:\s*100%;\s*max-width:\s*none;/);
+  assert.match(dashboardCss, /\.workspace-layout\s*\{[^}]*width:\s*100%/s);
   assert.match(dashboardCss, /\.workspace-layout\s*\{[^}]*grid-template-columns/s);
+  const noteUiSource = await read("anna-app/src/app.js");
+  const noteDedupeSource = await read("anna-app/src/note-dedupe.js");
+  assert.match(noteUiSource, /deduplicateNotesAndReferences/);
+  assert.match(noteUiSource, /This file is already saved\. Kept one copy in note history/);
+  assert.match(noteUiSource, /Updated the existing saved note for this file instead of creating a duplicate/);
+  assert.match(noteDedupeSource, /export function deduplicateNotesHistory/);
   assert.match(dashboardCss, /\.dashboard-action-grid\s*\{/);
   assert.match(dashboardCss, /@media \(max-width: 760px\)/);
   assert.match(html, /study-coach:activity-updated/);
