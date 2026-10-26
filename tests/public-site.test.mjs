@@ -41,10 +41,12 @@ test("landing page has a clear page title, description, single primary heading a
   assert.match(html, /<meta name="description" content="[^"]{40,}">/);
   assert.equal((html.match(/<h1(?:\s|>)/g) || []).length, 1);
   assert.match(html, /<h1>Make study time <span>count\.<\/span><\/h1>/);
+  assert.match(html, /<img class="brand-mark" src="\/assets\/ai-study-coach-logo\.png"/);
+  assert.match(html, /rel="apple-touch-icon" href="\/assets\/ai-study-coach-logo\.png"/);
   assert.match(html, /href="\/styles\.css"/);
   assert.match(html, /src="\/site\.js" defer/);
-  assert.match(html, /href="\/favicon\.svg"/);
-  for (const asset of ["public/styles.css", "public/site.js", "public/favicon.svg", "public/robots.txt", "public/sitemap.xml"]) {
+  assert.match(html, /href="\/assets\/ai-study-coach-logo\.png"/);
+  for (const asset of ["public/styles.css", "public/site.js", "public/favicon.svg", "public/assets/ai-study-coach-logo.png", "public/robots.txt", "public/sitemap.xml"]) {
     await access(path.join(root, asset));
   }
 });
@@ -76,6 +78,8 @@ test("landing page links directly to the working browser app", async () => {
 test("the generated browser app includes notes, planning, quizzes, and progress", async () => {
   const html = await read("public/app/index.html");
   assert.match(html, /AI Study Coach — Browser App/);
+  assert.ok(html.includes('<img class="brand-mark" src="/assets/ai-study-coach-logo.png"'));
+  assert.ok(html.includes('rel="apple-touch-icon" href="/assets/ai-study-coach-logo.png"'));
   assert.match(html, /id="page-dashboard"/);
   assert.match(html, /data-page="dashboard"><svg class="tab-icon"[^>]*><path[^>]*><\/path><path[^>]*><\/path><\/svg><span>Overview<\/span>/);
   assert.match(html, /dashboard-action-grid/);
