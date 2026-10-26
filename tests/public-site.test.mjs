@@ -77,7 +77,7 @@ test("the generated browser app includes notes, planning, quizzes, and progress"
   const html = await read("public/app/index.html");
   assert.match(html, /AI Study Coach — Browser App/);
   assert.match(html, /id="page-dashboard"/);
-  assert.match(html, /data-page="dashboard">Overview/);
+  assert.match(html, /data-page="dashboard"><svg class="tab-icon"[^>]*><path[^>]*><\/path><path[^>]*><\/path><\/svg><span>Overview<\/span>/);
   assert.match(html, /dashboard-action-grid/);
   assert.match(html, /id="dashboard-notes"/);
   assert.match(html, /id="dashboard-activity"/);
@@ -96,6 +96,13 @@ test("the generated browser app includes notes, planning, quizzes, and progress"
   assert.match(noteUiSource, /Updated the existing saved note for this file instead of creating a duplicate/);
   assert.match(noteDedupeSource, /export function deduplicateNotesHistory/);
   assert.match(dashboardCss, /\.dashboard-action-grid\s*\{/);
+  assert.match(dashboardCss, /--coach-radius-card/);
+  assert.match(dashboardCss, /\.dashboard-heading-art\s*\{/);
+  assert.match(dashboardCss, /\.tab-icon\s*\{/);
+  assert.match(dashboardCss, /prefers-reduced-motion:\s*reduce/);
+  assert.match(html, /Offline tools ready/);
+  assert.match(html, /Your activity stays in this browser/);
+  assert.match(html, /class="dashboard-heading-art"/);
   assert.match(dashboardCss, /@media \(max-width: 760px\)/);
   assert.match(html, /study-coach:activity-updated/);
   assert.match(html, /id="quiz-note-select"/);
