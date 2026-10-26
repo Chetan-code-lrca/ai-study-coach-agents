@@ -78,6 +78,8 @@ test("landing page links directly to the working browser app", async () => {
 test("the generated browser app includes notes, planning, quizzes, and progress", async () => {
   const html = await read("public/app/index.html");
   assert.match(html, /AI Study Coach — Browser App/);
+  assert.match(html, /<img class="brand-mark" src="\\/assets\\/ai-study-coach-logo\\.png"/);
+  assert.match(html, /rel="apple-touch-icon" href="\\/assets\\/ai-study-coach-logo\\.png"/);
   assert.match(html, /id="page-dashboard"/);
   assert.match(html, /data-page="dashboard"><svg class="tab-icon"[^>]*><path[^>]*><\/path><path[^>]*><\/path><\/svg><span>Overview<\/span>/);
   assert.match(html, /dashboard-action-grid/);
