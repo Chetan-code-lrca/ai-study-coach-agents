@@ -132,6 +132,8 @@ def load_persistent_progress() -> None:
                 st.session_state["study_history"] = saved["study_history"]
             if isinstance(saved.get("quiz_history"), list):
                 st.session_state["quiz_history"] = saved["quiz_history"]
+            if isinstance(saved.get("profile"), dict):
+                st.session_state["profile"] = saved["profile"]
     except Exception:
         # Keep the app usable even if storage is temporarily unavailable.
         st.session_state["_progress_storage_error"] = True
@@ -146,6 +148,7 @@ def save_persistent_progress() -> None:
         payload = {
             "study_history": st.session_state.get("study_history", []),
             "quiz_history": st.session_state.get("quiz_history", []),
+            "profile": st.session_state.get("profile", {}),
             "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
         }
         blob = container.get_blob_client(get_session_blob_name())
@@ -482,7 +485,7 @@ def render_profile() -> None:
             "course": course.strip(),
             "goals": goals.strip(),
         }
-        st.success("Profile saved for this session.")
+        st.success("Profile saved to Azure Storage for this session link.")
 
 
 def render_sidebar() -> str:
