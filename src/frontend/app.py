@@ -13,14 +13,14 @@ from datetime import datetime
 from typing import Any
 
 import streamlit as st
-from google import genai
-from google.genai import types
+import requests
 from pypdf import PdfReader
 from docx import Document
 
 
 APP_TITLE = "AI Study Coach"
-MODEL_NAME = "gemini-3.8-flash"
+MODEL_NAME = "openrouter/free"
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 st.set_page_config(
@@ -32,44 +32,57 @@ st.set_page_config(
 
 
 def get_api_key() -> str:
-    """Read the Gemini key from Streamlit secrets or the environment."""
+    """Read the OpenRouter key from Streamlit secrets or the environment."""
     try:
-        secret_value = st.secrets.get("GOOGLE_API_KEY", "")
+        secret_value = st.secrets.get("OPENROUTER_API_KEY", "")
     except Exception:
         secret_value = ""
-    return str(secret_value or os.getenv("GOOGLE_API_KEY", "")).strip()
-
-
-@st.cache_resource(show_spinner=False)
-def get_client(api_key: str):
-    """Create and cache the Gemini client for the current key."""
-    return genai.Client(api_key=api_key)
+    return str(secret_value or os.getenv("OPENROUTER_API_KEY", "")).strip()
 
 
 def gemini_text(prompt: str, *, json_mode: bool = False) -> str:
-    """Call Gemini with a production-safe error boundary."""
+    """Compatibility wrapper: send existing AI prompts to OpenRouter."""
     api_key = get_api_key()
     if not api_key:
         raise RuntimeError(
-            "Google Gemini is not configured. Add GOOGLE_API_KEY to the "
-            "Streamlit app secrets."
+            "OpenRouter is not configured. Set OPENROUTER_API_KEY in the app environment."
         )
 
-    client = get_client(api_key)
-    config = types.GenerateContentConfig(
-        max_output_tokens=4096,
-        response_mime_type="application/json" if json_mode else "text/plain",
-    )
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 4096,
+    }
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
 
-    response = client.models.generate_content(
-        model=MODEL_NAME,
-        contents=prompt,
-        config=config,
-    )
+    try:
+        response = requests.post(
+            OPENROUTER_URL,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://studycouch.azurewebsites.net",
+                "X-Title": "AI Study Coach",
+            },
+            json=payload,
+            timeout=90,
+        )
+        response.raise_for_status()
+        data = response.json()
+        text = (data.get("choices", [{}])[0].get("message", {}).get("content") or "").strip()
+    except requests.RequestException as exc:
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        if status == 401:
+            raise RuntimeError("OpenRouter rejected the API key. Check the Key Vault secret.") from None
+        if status == 402:
+            raise RuntimeError("OpenRouter reports insufficient credits for the selected model.") from None
+        if status == 429:
+            raise RuntimeError("OpenRouter rate limit reached. Wait briefly and retry.") from None
+        raise RuntimeError(f"OpenRouter request failed{f' (HTTP {status})' if status else ''}. Check model availability and try again.") from None
 
-    text = (response.text or "").strip()
     if not text:
-        raise RuntimeError("Gemini returned an empty response.")
+        raise RuntimeError("OpenRouter returned an empty response.")
     return text
 
 
@@ -406,11 +419,11 @@ def render_sidebar() -> str:
         st.divider()
         api_key = get_api_key()
         if api_key:
-            st.success("Gemini API configured")
+            st.success("OpenRouter API configured")
             st.caption(f"Model: {MODEL_NAME}")
         else:
-            st.warning("Gemini API key not configured")
-            st.caption("Add GOOGLE_API_KEY in Streamlit secrets to enable AI features.")
+            st.warning("OpenRouter API key not configured")
+            st.caption("Configure OPENROUTER_API_KEY in Azure app settings to enable AI features.")
     return page
 
 
@@ -431,7 +444,7 @@ def main() -> None:
         render_profile()
 
     st.divider()
-    st.caption("AI Study Coach · Streamlit + Google Gemini")
+    st.caption("AI Study Coach · Streamlit + OpenRouter")
 
 
 if __name__ == "__main__":
