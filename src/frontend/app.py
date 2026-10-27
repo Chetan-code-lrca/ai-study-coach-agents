@@ -216,9 +216,10 @@ def render_study_plan() -> None:
     col1, col2 = st.columns(2)
 
     with col1:
-        subject = st.selectbox(
-            "Subject",
-            ["Computer Science", "Mathematics", "Physics", "Chemistry", "Biology"],
+        subject = st.text_input(
+            "What do you want to study?",
+            placeholder="e.g. GATE CSE, Python, AI/ML, Digital Marketing, Biology...",
+            help="Enter any subject, skill, exam, or topic you're interested in.",
         )
         level = st.select_slider(
             "Current level",
@@ -236,6 +237,10 @@ def render_study_plan() -> None:
     )
 
     if st.button("Generate AI Study Plan", type="primary", use_container_width=True):
+        if not subject.strip():
+            st.warning("Enter a subject or topic you want to study.")
+            return
+
         prompt = f"""
 Create a practical study plan for a {level.lower()} student.
 Subject: {subject}
