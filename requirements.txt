@@ -18,3 +18,7 @@ black>=23.0.0
 flake8>=6.0.0
 loguru>=0.7.0
 python-json-logger>=2.0.7
+
+# Azure Blob Storage persistence (managed identity)
+azure-identity>=1.17.0
+azure-storage-blob>=12.20.0
