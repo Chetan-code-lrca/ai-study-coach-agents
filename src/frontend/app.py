@@ -9,11 +9,14 @@ from __future__ import annotations
 import io
 import json
 import os
+import uuid
 from datetime import datetime
 from typing import Any
 
 import streamlit as st
 import requests
+from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient
 from pypdf import PdfReader
 from docx import Document
 
@@ -86,6 +89,71 @@ def gemini_text(prompt: str, *, json_mode: bool = False) -> str:
     return text
 
 
+
+def get_storage_container():
+    """Return the private Azure Blob container when configured."""
+    account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL", "").strip()
+    if not account_url:
+        return None
+    try:
+        credential = DefaultAzureCredential()
+        service = BlobServiceClient(account_url=account_url, credential=credential)
+        return service.get_container_client("studycoach-data")
+    except Exception:
+        return None
+
+
+def get_session_blob_name() -> str:
+    """Use a browser URL session ID so separate visitors don't share progress."""
+    session_id = st.query_params.get("sid", "")
+    if not isinstance(session_id, str) or len(session_id) != 32 or not all(
+        char in "0123456789abcdef" for char in session_id.lower()
+    ):
+        session_id = uuid.uuid4().hex
+        st.query_params["sid"] = session_id
+    return f"sessions/{session_id}.json"
+
+
+def load_persistent_progress() -> None:
+    """Load study and quiz history once per Streamlit browser session."""
+    if st.session_state.get("_progress_loaded"):
+        return
+    st.session_state["_progress_loaded"] = True
+    container = get_storage_container()
+    if container is None:
+        return
+    try:
+        blob = container.get_blob_client(get_session_blob_name())
+        if not blob.exists():
+            return
+        saved = json.loads(blob.download_blob().readall().decode("utf-8"))
+        if isinstance(saved, dict):
+            if isinstance(saved.get("study_history"), list):
+                st.session_state["study_history"] = saved["study_history"]
+            if isinstance(saved.get("quiz_history"), list):
+                st.session_state["quiz_history"] = saved["quiz_history"]
+    except Exception:
+        # Keep the app usable even if storage is temporarily unavailable.
+        st.session_state["_progress_storage_error"] = True
+
+
+def save_persistent_progress() -> None:
+    """Persist non-sensitive study/quiz summaries to private Blob Storage."""
+    container = get_storage_container()
+    if container is None:
+        return
+    try:
+        payload = {
+            "study_history": st.session_state.get("study_history", []),
+            "quiz_history": st.session_state.get("quiz_history", []),
+            "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        }
+        blob = container.get_blob_client(get_session_blob_name())
+        blob.upload_blob(json.dumps(payload, ensure_ascii=False), overwrite=True)
+        st.session_state["_progress_storage_error"] = False
+    except Exception:
+        st.session_state["_progress_storage_error"] = True
+
 def extract_uploaded_text(uploaded_file) -> str:
     """Extract text from TXT, PDF, CSV, JSON, and DOCX study files."""
     suffix = uploaded_file.name.lower().rsplit(".", 1)[-1]
@@ -131,6 +199,9 @@ def init_state() -> None:
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
+
+
+    load_persistent_progress()
 
 
 def render_header() -> None:
@@ -443,6 +514,9 @@ def main() -> None:
     else:
         render_profile()
 
+    save_persistent_progress()
+    if st.session_state.get("_progress_storage_error"):
+        st.warning("Progress could not be synced to Azure Storage. Current-session progress is still available.")
     st.divider()
     st.caption("AI Study Coach · Streamlit + OpenRouter")
 
