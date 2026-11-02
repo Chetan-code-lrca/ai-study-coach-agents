@@ -19,6 +19,7 @@ from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 from pypdf import PdfReader
 from docx import Document
+from src.quiz_validation import validate_quiz_payload
 
 
 APP_TITLE = "AI Study Coach"
@@ -386,8 +387,10 @@ Return ONLY JSON in this shape:
             with st.spinner("Generating quiz..."):
                 raw = gemini_text(prompt, json_mode=True)
             quiz = safe_json(raw)
-            if not quiz or not isinstance(quiz.get("questions"), list):
-                raise RuntimeError("Gemini returned an invalid quiz format.")
+            try:
+                quiz = validate_quiz_payload(quiz, expected_count=count)
+            except ValueError as exc:
+                raise RuntimeError(f"The AI returned an invalid quiz: {exc}") from exc
             st.session_state.quiz = quiz
             st.session_state.answers = {}
         except Exception as exc:
