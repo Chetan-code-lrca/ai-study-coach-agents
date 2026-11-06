@@ -6,7 +6,6 @@ Streamlit Community Cloud without depending on the older prototype modules.
 
 from __future__ import annotations
 
-import io
 import json
 import os
 import uuid
@@ -17,10 +16,13 @@ import streamlit as st
 import requests
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
-from pypdf import PdfReader
-from docx import Document
 from src.quiz_validation import validate_quiz_payload
+from src.services.document_ingestion import extract_uploaded_text, MAX_DOCUMENT_CHARS, MAX_UPLOAD_BYTES
 
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 APP_TITLE = "AI Study Coach"
 MODEL_NAME = "openrouter/free"
@@ -44,8 +46,8 @@ def get_api_key() -> str:
     return str(secret_value or os.getenv("OPENROUTER_API_KEY", "")).strip()
 
 
-def gemini_text(prompt: str, *, json_mode: bool = False) -> str:
-    """Compatibility wrapper: send existing AI prompts to OpenRouter."""
+def generate_ai_text(prompt: str, *, json_mode: bool = False) -> str:
+    """Send a prompt to the configured OpenRouter model."""
     api_key = get_api_key()
     if not api_key:
         raise RuntimeError(
@@ -158,28 +160,8 @@ def save_persistent_progress() -> None:
     except Exception:
         st.session_state["_progress_storage_error"] = True
 
-def extract_uploaded_text(uploaded_file) -> str:
-    """Extract text from TXT, PDF, CSV, JSON, and DOCX study files."""
-    suffix = uploaded_file.name.lower().rsplit(".", 1)[-1]
-    data = uploaded_file.getvalue()
-
-    if suffix in {"txt", "csv", "json"}:
-        return data.decode("utf-8", errors="replace")
-
-    if suffix == "pdf":
-        reader = PdfReader(io.BytesIO(data))
-        pages = [page.extract_text() or "" for page in reader.pages]
-        return "\n\n".join(pages)
-
-    if suffix == "docx":
-        doc = Document(io.BytesIO(data))
-        return "\n".join(paragraph.text for paragraph in doc.paragraphs)
-
-    raise ValueError("Unsupported file type.")
-
-
 def safe_json(text: str) -> dict[str, Any] | None:
-    """Parse Gemini JSON responses even when fenced by markdown."""
+    """Parse model JSON responses even when fenced by markdown."""
     cleaned = text.strip()
     if cleaned.startswith("```"):
         cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned
@@ -212,6 +194,11 @@ def render_header() -> None:
     st.markdown(
         "# 🎓 AI Study Coach\n"
         "Personalized study planning, document learning, quizzes, and progress tracking."
+    )
+    st.info(
+        "AI actions send prompts and any selected source text to OpenRouter. "
+        "Uploaded documents are sent only when you request an AI action. "
+        "Do not submit confidential, personal, or restricted material unless your policy permits sharing it with that provider."
     )
 
 
@@ -257,7 +244,7 @@ revision, one weekly checkpoint, and realistic daily workload. Keep it concise.
 """
         try:
             with st.spinner("Building your study plan..."):
-                plan = gemini_text(prompt)
+                plan = generate_ai_text(prompt)
             st.session_state.study_history.append(
                 {
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -277,7 +264,7 @@ def render_document_learning() -> None:
     uploaded = st.file_uploader(
         "Upload study material",
         type=["txt", "pdf", "docx", "csv", "json"],
-        help="The text is sent to Gemini only when you request an AI action.",
+        help=f"Maximum upload: {MAX_UPLOAD_BYTES // (1024 * 1024)} MiB. Extracted text is capped at {MAX_DOCUMENT_CHARS:,} characters. Text is sent to OpenRouter only when you request an AI action.",
     )
 
     text = st.text_area(
@@ -488,7 +475,7 @@ def render_profile() -> None:
             "course": course.strip(),
             "goals": goals.strip(),
         }
-        st.success("Profile saved to Azure Storage for this session link.")
+        st.success("Profile updated for this session.")
 
 
 def render_sidebar() -> str:
