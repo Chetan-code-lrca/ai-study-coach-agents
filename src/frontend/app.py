@@ -14,13 +14,12 @@ from typing import Any
 
 import streamlit as st
 import requests
+from dotenv import load_dotenv
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 from src.quiz_validation import validate_quiz_payload
 from src.services.document_ingestion import extract_uploaded_text, MAX_DOCUMENT_CHARS, MAX_UPLOAD_BYTES
 
-
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -80,7 +79,7 @@ def generate_ai_text(prompt: str, *, json_mode: bool = False) -> str:
     except requests.RequestException as exc:
         status = getattr(getattr(exc, "response", None), "status_code", None)
         if status == 401:
-            raise RuntimeError("OpenRouter rejected the API key. Check the Key Vault secret.") from None
+            raise RuntimeError("OpenRouter rejected the API key. Check the configured OPENROUTER_API_KEY secret.") from None
         if status == 402:
             raise RuntimeError("OpenRouter reports insufficient credits for the selected model.") from None
         if status == 429:
@@ -264,7 +263,7 @@ def render_document_learning() -> None:
     uploaded = st.file_uploader(
         "Upload study material",
         type=["txt", "pdf", "docx", "csv", "json"],
-        help=f"Maximum upload: {MAX_UPLOAD_BYTES // (1024 * 1024)} MiB. Extracted text is capped at {MAX_DOCUMENT_CHARS:,} characters. Text is sent to OpenRouter only when you request an AI action.",
+        help=f"Maximum upload: {MAX_UPLOAD_BYTES // (1024 * 1024)} MiB. PDFs are limited to 100 pages; extracted text is capped at {MAX_DOCUMENT_CHARS:,} characters. Text is sent to OpenRouter only when you request an AI action.",
     )
 
     text = st.text_area(
@@ -292,7 +291,7 @@ def render_document_learning() -> None:
         if st.button("Summarize", use_container_width=True):
             try:
                 with st.spinner("Summarizing..."):
-                    result = gemini_text(
+                    result = generate_ai_text(
                         "Summarize the following study material. Provide a clear overview, "
                         "key concepts, important definitions, and a short revision checklist.\n\n"
                         + text[:50000]
@@ -305,7 +304,7 @@ def render_document_learning() -> None:
         if st.button("Explain Key Concepts", use_container_width=True):
             try:
                 with st.spinner("Explaining the concepts..."):
-                    result = gemini_text(
+                    result = generate_ai_text(
                         "Identify and explain the most important concepts in the following "
                         "study material in beginner-friendly language, using small examples.\n\n"
                         + text[:50000]
@@ -321,7 +320,7 @@ def render_document_learning() -> None:
         else:
             try:
                 with st.spinner("Finding the answer..."):
-                    answer = gemini_text(
+                    answer = generate_ai_text(
                         "Answer the question using only the supplied study material. "
                         "If the material does not contain enough information, say so clearly.\n\n"
                         f"MATERIAL:\n{text[:50000]}\n\nQUESTION:\n{question}"
@@ -372,7 +371,7 @@ Return ONLY JSON in this shape:
 """
         try:
             with st.spinner("Generating quiz..."):
-                raw = gemini_text(prompt, json_mode=True)
+                raw = generate_ai_text(prompt, json_mode=True)
             quiz = safe_json(raw)
             try:
                 quiz = validate_quiz_payload(quiz, expected_count=count)
