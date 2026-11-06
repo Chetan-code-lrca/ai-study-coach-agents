@@ -18,7 +18,11 @@ from dotenv import load_dotenv
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 from src.quiz_validation import validate_quiz_payload
-from src.services.document_ingestion import extract_uploaded_text, MAX_DOCUMENT_CHARS, MAX_UPLOAD_BYTES
+from src.services.document_ingestion import (
+    MAX_DOCUMENT_CHARS,
+    MAX_UPLOAD_BYTES,
+    extract_uploaded_text,
+)
 
 
 load_dotenv()
