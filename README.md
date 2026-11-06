@@ -194,7 +194,7 @@ ai-study-coach-agents/
 Run the tests and compile the active entry points:
 
 ```bash
-python -m pytest -q
+python -m pytest tests/ -q
 python -m py_compile streamlit_app.py src/frontend/app.py src/services/document_ingestion.py
 ```
 
