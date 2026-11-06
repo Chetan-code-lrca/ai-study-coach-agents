@@ -10,10 +10,9 @@ The repository also contains older agent and service code from earlier versions 
 
 This repository contains three related application surfaces:
 
-- **Vercel browser app:** the public site lives at [ai-study-coach-agents.vercel.app](https://ai-study-coach-agents.vercel.app/). The **Launch the web app** links open the actual study workspace at `/app/`, built from the reviewed Anna UI. The browser edition uses localStorage for profile, notes, plans, and quiz history; those records remain in that browser and do not sync automatically to Anna or other devices.
-- **Vercel browser app:** study planning, note summaries, concept explanations, note-grounded answers, and quizzes use built-in rule-based/extractive tools in the browser. The browser edition does not call `/api/study`, send prompts to external model providers, or require an AI API key. It is reliable and key-free, but less flexible than a hosted language model. Profile, notes, plans, and quiz history stay in that browser's local storage and do not automatically sync to Anna or other devices.
-- **Anna-native app:** `anna-app/` is the separate Anna-runtime edition. It uses Anna's LLM and Storage host APIs and does not need the Vercel Gemini key.
-- **Streamlit edition:** `streamlit_app.py` remains an alternative Python-hosted implementation for Streamlit Community Cloud. Set `GOOGLE_API_KEY` in that service's secrets as well. Its session state is independent of both the Vercel browser app and the Anna-native app.
+- **Vercel browser app:** the public site lives at https://ai-study-coach-agents.vercel.app/. Its /app/ workspace is built from the reviewed Anna UI and runs local rule-based/extractive study tools. It does not call /api/study, require a model API key, or sync its localStorage data to the Streamlit or Anna editions.
+- **Anna-native app:** anna-app/ is the separate Anna-runtime edition. It uses Anna's LLM and Storage host APIs.
+- **Streamlit edition:** streamlit_app.py is the server-hosted AI implementation. Its current AI calls go to OpenRouter using OPENROUTER_API_KEY and the openrouter/free model alias. It is separate from the Vercel browser and Anna-native editions.
 
 Vercel serves the static landing page and browser app. The retired `/api/study` endpoint returns `410 Gone`; the browser edition has no external AI proxy. Vercel does not run a persistent Streamlit server.
 
@@ -75,7 +74,8 @@ Save a small student profile for the current session.
 
 - Python 3.11 or newer
 - pip
-- A Google Gemini API key for the AI features
+- An OpenRouter API key for Streamlit AI features
+- Optional Azure Blob Storage account access for persistent progress
 
 ## Run locally
 
@@ -109,19 +109,23 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Set the Gemini API key before starting the app.
+Copy the environment template and set the OpenRouter key.
 
 Linux/macOS:
 
 ```bash
-export GOOGLE_API_KEY="your-gemini-api-key"
+cp .env.example .env
+# Edit .env and set OPENROUTER_API_KEY
 ```
 
 Windows PowerShell:
 
 ```powershell
-$env:GOOGLE_API_KEY = "your-gemini-api-key"
+Copy-Item .env.example .env
+# Edit .env and set OPENROUTER_API_KEY
 ```
+
+The app loads .env for local runs. In hosted environments, configure OPENROUTER_API_KEY as a secret or environment variable. Do not commit real credentials.
 
 Start Streamlit:
 
@@ -141,25 +145,27 @@ Branch: main
 Main file: streamlit_app.py
 ```
 
-Add the Gemini key to the app secrets:
+Add the OpenRouter key to the app secrets:
 
 ```toml
-GOOGLE_API_KEY = "your-gemini-api-key"
+OPENROUTER_API_KEY = "your-openrouter-api-key"
 ```
 
-Do not put the real key in the repository.
+Do not put the real key in the repository. For optional progress persistence, configure AZURE_STORAGE_ACCOUNT_URL and the app's managed identity with access to the studycoach-data blob container.
 
-## Gemini integration
+## OpenRouter integration
 
-The maintained Streamlit frontend uses Google's `google-genai` Python SDK and the model configured as `gemini-3.8-flash`.
+The maintained Streamlit frontend sends AI requests to https://openrouter.ai/api/v1/chat/completions using the openrouter/free model alias. Study-plan prompts, quiz prompts, questions, and source text selected for document or quiz actions are sent to OpenRouter. Review the provider's current privacy and retention terms before using the service with sensitive material.
 
-The Gemini call is used for study-plan generation, document summaries and explanations, document Q&A, and quiz generation. PDF and DOCX files are converted to text locally with `pypdf` and `python-docx` before an AI request is made.
+PDF and DOCX files are converted to text locally first. Uploaded files are limited to 10 MiB, PDF files to 100 pages, and extracted document text to 50,000 characters. The app only sends document text when an AI action is requested. These limits reduce oversized processing; they do not make confidential data safe to share.
 
-## Data handling
+## Data handling and persistence
 
-The maintained frontend stores the active profile, study-plan history, quiz history, current quiz, answers, and document text in Streamlit session state. There is no database or cross-device account system in this version.
+The Streamlit app keeps the active quiz, answers, document text, and current interaction state in Streamlit session state. When AZURE_STORAGE_ACCOUNT_URL is configured and the app identity can access the private studycoach-data container, it also stores study history, quiz history, and the profile in Azure Blob Storage. Without that configuration, progress is session-only.
 
-The repository also contains an older `src/main.py` implementation with its own local `.study_coach_data` directory and older Gemini/agent code. That version is separate from the current `streamlit_app.py` path.
+Persistent records are keyed by a 32-character session ID in the sid query parameter. Treat the complete app URL as private: someone who obtains the same session link may be able to access the associated saved progress while storage is enabled. This is not a user-account or role-based access system. Configure a retention and deletion policy for the storage container before using it with an organization.
+
+The repository also contains older agent/service code, including Gemini integrations. Those modules are separate from the maintained streamlit_app.py path.
 
 ## Project structure
 
@@ -173,6 +179,7 @@ ai-study-coach-agents/
 │   │   └── app.py
 │   ├── agents/
 │   ├── services/
+│   │   └── document_ingestion.py  # bounded document text extraction
 │   └── main.py
 ├── .devcontainer/
 ├── requirements.txt
@@ -184,10 +191,11 @@ ai-study-coach-agents/
 
 ## Quick checks
 
-To check that the two main Python entry files compile:
+Run the tests and compile the active entry points:
 
 ```bash
-python -m py_compile streamlit_app.py src/frontend/app.py
+python -m pytest -q
+python -m py_compile streamlit_app.py src/frontend/app.py src/services/document_ingestion.py
 ```
 
 ## Older agent code
@@ -196,12 +204,13 @@ The `src/agents/` and `src/services/` modules are earlier parts of the project. 
 
 ## Current limitations
 
-- profile, plan history, quiz history, and document text are session-based in the browser/Streamlit edition;
-- there is no account system or cloud synchronization;
-- uploaded documents are processed as text rather than stored in a document database;
-- the Vercel browser app runs key-free offline study tools; generated content is extractive or rule-based rather than full LLM output;
-- the Streamlit edition and older agent/service modules still use Gemini and require a valid Google API key;
-- the older agent/service modules use a different implementation from the maintained Streamlit frontend.
+- there is no user account system, role-based access control, or organization/tenant isolation;
+- optional Azure Blob progress records are keyed by a private session URL rather than an authenticated user identity;
+- document extraction is text-oriented and may not preserve diagrams, tables, equations, or complex layouts;
+- AI output can be incorrect and requires verification against course material;
+- the Vercel browser app uses extractive/rule-based tools, not a hosted LLM;
+- the Streamlit edition depends on OpenRouter availability, model routing, and the configured API key;
+- the older agent/service modules are not the active Streamlit implementation.
 
 ## License
 
