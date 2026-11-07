@@ -153,7 +153,9 @@ def save_persistent_progress() -> None:
     """Persist non-sensitive study/quiz summaries to private Blob Storage."""
     container = get_storage_container()
     if container is None:
+        st.session_state["_progress_storage_configured"] = False
         return
+    st.session_state["_progress_storage_configured"] = True
     try:
         payload = {
             "study_history": st.session_state.get("study_history", []),
@@ -528,6 +530,47 @@ def render_profile() -> None:
             "goals": goals.strip(),
         }
         st.success("Profile updated for the current session.")
+
+    st.divider()
+    st.subheader("Saved data")
+    if get_storage_container() is not None:
+        st.caption(
+            "Azure Blob persistence is enabled. This page's sid URL parameter is a "
+            "bearer session link: anyone with the full link may access this session's "
+            "saved profile and progress. Do not share it."
+        )
+    else:
+        st.caption("Azure Blob persistence is not configured; data is available only in the active Streamlit session.")
+    if st.button("Delete saved progress for this session", type="secondary", use_container_width=True):
+        try:
+            delete_current_session_progress()
+        except Exception:
+            st.error("Saved progress could not be deleted from Azure Storage. No local session data was cleared.")
+
+
+def delete_current_session_progress() -> None:
+    """Delete this session's private blob and rotate its URL bearer token."""
+    container = get_storage_container()
+    if container is not None:
+        blob = container.get_blob_client(get_session_blob_name())
+        if blob.exists():
+            blob.delete_blob()
+
+    defaults = {
+        "study_history": [],
+        "quiz_history": [],
+        "quiz": None,
+        "answers": {},
+        "document_text": "",
+        "profile": {},
+    }
+    for key, value in defaults.items():
+        st.session_state[key] = value
+
+    st.query_params["sid"] = uuid.uuid4().hex
+    st.session_state["_progress_loaded"] = True
+    st.session_state["_progress_storage_error"] = False
+    st.rerun()
 
 
 def render_sidebar() -> str:
