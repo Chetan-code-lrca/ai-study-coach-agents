@@ -13,7 +13,7 @@ This repository contains three related application surfaces:
 - **Vercel browser app:** the public site lives at [ai-study-coach-agents.vercel.app](https://ai-study-coach-agents.vercel.app/). The **Launch the web app** links open the actual study workspace at `/app/`, built from the reviewed Anna UI. The browser edition uses localStorage for profile, notes, plans, and quiz history; those records remain in that browser and do not sync automatically to Anna or other devices.
 - **Browser capabilities:** study planning, note summaries, concept explanations, note-grounded answers, and quizzes use built-in rule-based/extractive tools in the browser. The browser edition does not call `/api/study`, send prompts to external model providers, or require an AI API key. Profile, notes, plans, and quiz history stay in that browser's local storage and do not automatically sync to Anna or other devices.
 - **Anna-native app:** `anna-app/` is the separate Anna-runtime edition. It uses Anna's LLM and Storage host APIs and does not need the Vercel Gemini key.
-- **Streamlit edition:** `streamlit_app.py` remains an alternative Python-hosted implementation for Streamlit Community Cloud. Set `GOOGLE_API_KEY` in that service's secrets as well. Its session state is independent of both the Vercel browser app and the Anna-native app.
+- **Streamlit edition:** `streamlit_app.py` remains an alternative Python-hosted implementation for Streamlit Community Cloud. Set `OPENROUTER_API_KEY` in that service's secrets. Configure `AZURE_STORAGE_ACCOUNT_URL` and a private Blob container only if persistent progress is needed. Its session state is independent of both the Vercel browser app and the Anna-native app.
 
 Vercel serves the static landing page and browser app. The retired `/api/study` endpoint returns `410 Gone`; the browser edition has no external AI proxy. Vercel does not run a persistent Streamlit server.
 
@@ -196,9 +196,9 @@ The `src/agents/` and `src/services/` modules are earlier parts of the project. 
 
 ## Current limitations
 
-- profile, plan history, quiz history, and document text are session-based in the browser/Streamlit edition;
-- there is no account system or cloud synchronization;
-- uploaded documents are processed as text rather than stored in a document database; the Streamlit edition limits uploads and extracted text but does not provide malware scanning;
+- the browser and Streamlit editions do not provide user accounts or identity-based access control;
+- browser history is local to that browser; Streamlit progress summaries persist in Azure Blob only when configured, using an unguessable URL session token rather than an authenticated account;
+- uploaded documents are processed as text rather than stored in a document database; the Streamlit edition caps uploads at 10 MB, PDF files at 100 pages, DOCX expanded content at 50 MB, and extracted/pasted text at 50,000 characters, but does not provide malware scanning;
 - the Vercel browser app runs key-free offline study tools; generated content is extractive or rule-based rather than full LLM output;
 - the Streamlit edition uses OpenRouter and requires OPENROUTER_API_KEY for hosted AI actions; older agent/service modules are separate and may use other provider settings;
 - the older agent/service modules use a different implementation from the maintained Streamlit frontend.
