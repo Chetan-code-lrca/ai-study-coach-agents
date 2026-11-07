@@ -13,7 +13,7 @@ This repository contains three related application surfaces:
 - **Vercel browser app:** the public site lives at [ai-study-coach-agents.vercel.app](https://ai-study-coach-agents.vercel.app/). The **Launch the web app** links open the actual study workspace at `/app/`, built from the reviewed Anna UI. The browser edition uses localStorage for profile, notes, plans, and quiz history; those records remain in that browser and do not sync automatically to Anna or other devices.
 - **Vercel browser app:** study planning, note summaries, concept explanations, note-grounded answers, and quizzes use built-in rule-based/extractive tools in the browser. The browser edition does not call `/api/study`, send prompts to external model providers, or require an AI API key. It is reliable and key-free, but less flexible than a hosted language model. Profile, notes, plans, and quiz history stay in that browser's local storage and do not automatically sync to Anna or other devices.
 - **Anna-native app:** `anna-app/` is the separate Anna-runtime edition. It uses Anna's LLM and Storage host APIs and does not need the Vercel Gemini key.
-- **Streamlit edition:** `streamlit_app.py` remains an alternative Python-hosted implementation for Streamlit Community Cloud. Set `GOOGLE_API_KEY` in that service's secrets as well. Its session state is independent of both the Vercel browser app and the Anna-native app.
+- **Streamlit edition:** `streamlit_app.py` remains an alternative Python-hosted implementation for Streamlit Community Cloud. Set `OPENROUTER_API_KEY` in that service's secrets. Its session state is independent of both the Vercel browser app and the Anna-native app.
 
 Vercel serves the static landing page and browser app. The retired `/api/study` endpoint returns `410 Gone`; the browser edition has no external AI proxy. Vercel does not run a persistent Streamlit server.
 
@@ -75,7 +75,7 @@ Save a small student profile for the current session.
 
 - Python 3.11 or newer
 - pip
-- A Google Gemini API key for the AI features
+- An OpenRouter API key (`OPENROUTER_API_KEY`) for the maintained Streamlit AI features. The browser edition does not need an API key.
 
 ## Run locally
 
@@ -109,18 +109,18 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Set the Gemini API key before starting the app.
+Set the OpenRouter API key before starting the app.
 
 Linux/macOS:
 
 ```bash
-export GOOGLE_API_KEY="your-gemini-api-key"
+export OPENROUTER_API_KEY="your-openrouter-api-key"
 ```
 
 Windows PowerShell:
 
 ```powershell
-$env:GOOGLE_API_KEY = "your-gemini-api-key"
+$env:OPENROUTER_API_KEY = "your-openrouter-api-key"
 ```
 
 Start Streamlit:
@@ -144,16 +144,16 @@ Main file: streamlit_app.py
 Add the Gemini key to the app secrets:
 
 ```toml
-GOOGLE_API_KEY = "your-gemini-api-key"
+OPENROUTER_API_KEY = "your-openrouter-api-key"
 ```
 
 Do not put the real key in the repository.
 
-## Gemini integration
+## Streamlit AI integration
 
-The maintained Streamlit frontend uses Google's `google-genai` Python SDK and the model configured as `gemini-3.8-flash`.
+The maintained Streamlit frontend sends prompts to the OpenRouter chat-completions API using `OPENROUTER_API_KEY`. The configured model route is `openrouter/free`; the upstream model selected by that route and its availability can change. The compatibility function is still named `gemini_text`, but it does not call Google Gemini.
 
-The Gemini call is used for study-plan generation, document summaries and explanations, document Q&A, and quiz generation. PDF and DOCX files are converted to text locally with `pypdf` and `python-docx` before an AI request is made.
+Study-plan generation, document summaries and explanations, document Q&A, and quiz generation use this provider. PDF and DOCX files are converted to text locally with `pypdf` and `python-docx` before the extracted text is sent in an AI request. Do not upload confidential material unless you are authorised to share it with the configured provider.
 
 ## Data handling
 
