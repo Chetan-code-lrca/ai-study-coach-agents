@@ -11,6 +11,7 @@ import json
 import os
 import uuid
 from datetime import datetime
+from zipfile import ZipFile
 from typing import Any
 
 import streamlit as st
@@ -20,6 +21,13 @@ from azure.storage.blob import BlobServiceClient
 from pypdf import PdfReader
 from docx import Document
 from src.quiz_validation import validate_quiz_payload
+from src.services.document_limits import (
+    MAX_DOCX_UNCOMPRESSED_BYTES,
+    MAX_DOCUMENT_CHARS,
+    MAX_PDF_PAGES,
+    validate_extracted_text,
+    validate_upload_size,
+)
 
 
 APP_TITLE = "AI Study Coach"
@@ -44,8 +52,8 @@ def get_api_key() -> str:
     return str(secret_value or os.getenv("OPENROUTER_API_KEY", "")).strip()
 
 
-def gemini_text(prompt: str, *, json_mode: bool = False) -> str:
-    """Compatibility wrapper: send existing AI prompts to OpenRouter."""
+def openrouter_text(prompt: str, *, json_mode: bool = False) -> str:
+    """Send a study prompt to the configured OpenRouter model."""
     api_key = get_api_key()
     if not api_key:
         raise RuntimeError(
@@ -78,7 +86,7 @@ def gemini_text(prompt: str, *, json_mode: bool = False) -> str:
     except requests.RequestException as exc:
         status = getattr(getattr(exc, "response", None), "status_code", None)
         if status == 401:
-            raise RuntimeError("OpenRouter rejected the API key. Check the Key Vault secret.") from None
+            raise RuntimeError("OpenRouter rejected the API key. Check OPENROUTER_API_KEY in app secrets.") from None
         if status == 402:
             raise RuntimeError("OpenRouter reports insufficient credits for the selected model.") from None
         if status == 429:
@@ -91,6 +99,7 @@ def gemini_text(prompt: str, *, json_mode: bool = False) -> str:
 
 
 
+@st.cache_resource
 def get_storage_container():
     """Return the private Azure Blob container when configured."""
     account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL", "").strip()
@@ -159,27 +168,56 @@ def save_persistent_progress() -> None:
         st.session_state["_progress_storage_error"] = True
 
 def extract_uploaded_text(uploaded_file) -> str:
-    """Extract text from TXT, PDF, CSV, JSON, and DOCX study files."""
+    """Extract bounded text from TXT, PDF, CSV, JSON, and DOCX study files."""
+    validate_upload_size(uploaded_file.size)
     suffix = uploaded_file.name.lower().rsplit(".", 1)[-1]
     data = uploaded_file.getvalue()
+    if len(data) != uploaded_file.size:
+        raise ValueError("The uploaded file could not be read completely.")
 
     if suffix in {"txt", "csv", "json"}:
-        return data.decode("utf-8", errors="replace")
-
-    if suffix == "pdf":
+        text = data.decode("utf-8", errors="replace")
+    elif suffix == "pdf":
         reader = PdfReader(io.BytesIO(data))
-        pages = [page.extract_text() or "" for page in reader.pages]
-        return "\n\n".join(pages)
-
-    if suffix == "docx":
+        if len(reader.pages) > MAX_PDF_PAGES:
+            raise ValueError(f"PDF files are limited to {MAX_PDF_PAGES} pages.")
+        pages = []
+        total_chars = 0
+        for page in reader.pages:
+            page_text = page.extract_text() or ""
+            total_chars += len(page_text)
+            if total_chars > MAX_DOCUMENT_CHARS:
+                raise ValueError(
+                    f"Extracted text exceeds {MAX_DOCUMENT_CHARS:,} characters. "
+                    "Split the document into smaller sections and retry."
+                )
+            pages.append(page_text)
+        text = "\n\n".join(pages)
+    elif suffix == "docx":
+        with ZipFile(io.BytesIO(data)) as archive:
+            uncompressed_size = sum(entry.file_size for entry in archive.infolist())
+        if uncompressed_size > MAX_DOCX_UNCOMPRESSED_BYTES:
+            raise ValueError("The DOCX expands beyond the 50 MB processing limit.")
         doc = Document(io.BytesIO(data))
-        return "\n".join(paragraph.text for paragraph in doc.paragraphs)
+        paragraphs = []
+        total_chars = 0
+        for paragraph in doc.paragraphs:
+            total_chars += len(paragraph.text)
+            if total_chars > MAX_DOCUMENT_CHARS:
+                raise ValueError(
+                    f"Extracted text exceeds {MAX_DOCUMENT_CHARS:,} characters. "
+                    "Split the document into smaller sections and retry."
+                )
+            paragraphs.append(paragraph.text)
+        text = "\n".join(paragraphs)
+    else:
+        raise ValueError("Unsupported file type.")
 
-    raise ValueError("Unsupported file type.")
+    return validate_extracted_text(text)
 
 
 def safe_json(text: str) -> dict[str, Any] | None:
-    """Parse Gemini JSON responses even when fenced by markdown."""
+    """Parse model JSON responses even when fenced by markdown."""
     cleaned = text.strip()
     if cleaned.startswith("```"):
         cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned
@@ -257,7 +295,7 @@ revision, one weekly checkpoint, and realistic daily workload. Keep it concise.
 """
         try:
             with st.spinner("Building your study plan..."):
-                plan = gemini_text(prompt)
+                plan = openrouter_text(prompt)
             st.session_state.study_history.append(
                 {
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -277,13 +315,14 @@ def render_document_learning() -> None:
     uploaded = st.file_uploader(
         "Upload study material",
         type=["txt", "pdf", "docx", "csv", "json"],
-        help="The text is sent to Gemini only when you request an AI action.",
+        help="The text is sent to OpenRouter only when you request an AI action.",
     )
 
     text = st.text_area(
         "Or paste study material",
         value=st.session_state.document_text,
         height=220,
+        max_chars=MAX_DOCUMENT_CHARS,
     )
 
     if uploaded is not None:
@@ -488,7 +527,7 @@ def render_profile() -> None:
             "course": course.strip(),
             "goals": goals.strip(),
         }
-        st.success("Profile saved to Azure Storage for this session link.")
+        st.success("Profile updated for the current session.")
 
 
 def render_sidebar() -> str:
@@ -505,7 +544,7 @@ def render_sidebar() -> str:
             st.caption(f"Model: {MODEL_NAME}")
         else:
             st.warning("OpenRouter API key not configured")
-            st.caption("Configure OPENROUTER_API_KEY in Azure app settings to enable AI features.")
+            st.caption("Configure OPENROUTER_API_KEY in app secrets to enable hosted AI features.")
     return page
 
 
@@ -528,6 +567,8 @@ def main() -> None:
     save_persistent_progress()
     if st.session_state.get("_progress_storage_error"):
         st.warning("Progress could not be synced to Azure Storage. Current-session progress is still available.")
+    elif st.session_state.get("_progress_storage_configured") is False:
+        st.info("Azure Blob persistence is not configured. Progress lasts only for this active Streamlit session.")
     st.divider()
     st.caption("AI Study Coach · Streamlit + OpenRouter")
 
