@@ -6,7 +6,6 @@ Streamlit Community Cloud without depending on the older prototype modules.
 
 from __future__ import annotations
 
-import io
 import json
 import os
 import uuid
@@ -15,12 +14,18 @@ from typing import Any
 
 import streamlit as st
 import requests
+from dotenv import load_dotenv
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
-from pypdf import PdfReader
-from docx import Document
 from src.quiz_validation import validate_quiz_payload
+from src.services.document_ingestion import (
+    MAX_DOCUMENT_CHARS,
+    MAX_UPLOAD_BYTES,
+    extract_uploaded_text,
+)
 
+
+load_dotenv()
 
 APP_TITLE = "AI Study Coach"
 MODEL_NAME = "openrouter/free"
@@ -44,8 +49,8 @@ def get_api_key() -> str:
     return str(secret_value or os.getenv("OPENROUTER_API_KEY", "")).strip()
 
 
-def gemini_text(prompt: str, *, json_mode: bool = False) -> str:
-    """Compatibility wrapper: send existing AI prompts to OpenRouter."""
+def generate_ai_text(prompt: str, *, json_mode: bool = False) -> str:
+    """Send a prompt to the configured OpenRouter model."""
     api_key = get_api_key()
     if not api_key:
         raise RuntimeError(
@@ -78,7 +83,7 @@ def gemini_text(prompt: str, *, json_mode: bool = False) -> str:
     except requests.RequestException as exc:
         status = getattr(getattr(exc, "response", None), "status_code", None)
         if status == 401:
-            raise RuntimeError("OpenRouter rejected the API key. Check the Key Vault secret.") from None
+            raise RuntimeError("OpenRouter rejected the API key. Check the configured OPENROUTER_API_KEY secret.") from None
         if status == 402:
             raise RuntimeError("OpenRouter reports insufficient credits for the selected model.") from None
         if status == 429:
@@ -91,6 +96,7 @@ def gemini_text(prompt: str, *, json_mode: bool = False) -> str:
 
 
 
+@st.cache_resource
 def get_storage_container():
     """Return the private Azure Blob container when configured."""
     account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL", "").strip()
@@ -144,7 +150,9 @@ def save_persistent_progress() -> None:
     """Persist non-sensitive study/quiz summaries to private Blob Storage."""
     container = get_storage_container()
     if container is None:
+        st.session_state["_progress_storage_configured"] = False
         return
+    st.session_state["_progress_storage_configured"] = True
     try:
         payload = {
             "study_history": st.session_state.get("study_history", []),
@@ -158,28 +166,8 @@ def save_persistent_progress() -> None:
     except Exception:
         st.session_state["_progress_storage_error"] = True
 
-def extract_uploaded_text(uploaded_file) -> str:
-    """Extract text from TXT, PDF, CSV, JSON, and DOCX study files."""
-    suffix = uploaded_file.name.lower().rsplit(".", 1)[-1]
-    data = uploaded_file.getvalue()
-
-    if suffix in {"txt", "csv", "json"}:
-        return data.decode("utf-8", errors="replace")
-
-    if suffix == "pdf":
-        reader = PdfReader(io.BytesIO(data))
-        pages = [page.extract_text() or "" for page in reader.pages]
-        return "\n\n".join(pages)
-
-    if suffix == "docx":
-        doc = Document(io.BytesIO(data))
-        return "\n".join(paragraph.text for paragraph in doc.paragraphs)
-
-    raise ValueError("Unsupported file type.")
-
-
 def safe_json(text: str) -> dict[str, Any] | None:
-    """Parse Gemini JSON responses even when fenced by markdown."""
+    """Parse model JSON responses even when fenced by markdown."""
     cleaned = text.strip()
     if cleaned.startswith("```"):
         cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned
@@ -212,6 +200,11 @@ def render_header() -> None:
     st.markdown(
         "# 🎓 AI Study Coach\n"
         "Personalized study planning, document learning, quizzes, and progress tracking."
+    )
+    st.info(
+        "AI actions send prompts and any selected source text to OpenRouter. "
+        "Uploaded documents are sent only when you request an AI action. "
+        "Do not submit confidential, personal, or restricted material unless your policy permits sharing it with that provider."
     )
 
 
@@ -257,7 +250,7 @@ revision, one weekly checkpoint, and realistic daily workload. Keep it concise.
 """
         try:
             with st.spinner("Building your study plan..."):
-                plan = gemini_text(prompt)
+                plan = generate_ai_text(prompt)
             st.session_state.study_history.append(
                 {
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -277,13 +270,14 @@ def render_document_learning() -> None:
     uploaded = st.file_uploader(
         "Upload study material",
         type=["txt", "pdf", "docx", "csv", "json"],
-        help="The text is sent to Gemini only when you request an AI action.",
+        help=f"Maximum upload: {MAX_UPLOAD_BYTES // (1024 * 1024)} MiB. PDFs are limited to 100 pages; extracted text is capped at {MAX_DOCUMENT_CHARS:,} characters. Text is sent to OpenRouter only when you request an AI action.",
     )
 
     text = st.text_area(
         "Or paste study material",
         value=st.session_state.document_text,
         height=220,
+        max_chars=MAX_DOCUMENT_CHARS,
     )
 
     if uploaded is not None:
@@ -305,7 +299,7 @@ def render_document_learning() -> None:
         if st.button("Summarize", use_container_width=True):
             try:
                 with st.spinner("Summarizing..."):
-                    result = gemini_text(
+                    result = generate_ai_text(
                         "Summarize the following study material. Provide a clear overview, "
                         "key concepts, important definitions, and a short revision checklist.\n\n"
                         + text[:50000]
@@ -318,7 +312,7 @@ def render_document_learning() -> None:
         if st.button("Explain Key Concepts", use_container_width=True):
             try:
                 with st.spinner("Explaining the concepts..."):
-                    result = gemini_text(
+                    result = generate_ai_text(
                         "Identify and explain the most important concepts in the following "
                         "study material in beginner-friendly language, using small examples.\n\n"
                         + text[:50000]
@@ -334,7 +328,7 @@ def render_document_learning() -> None:
         else:
             try:
                 with st.spinner("Finding the answer..."):
-                    answer = gemini_text(
+                    answer = generate_ai_text(
                         "Answer the question using only the supplied study material. "
                         "If the material does not contain enough information, say so clearly.\n\n"
                         f"MATERIAL:\n{text[:50000]}\n\nQUESTION:\n{question}"
@@ -385,7 +379,7 @@ Return ONLY JSON in this shape:
 """
         try:
             with st.spinner("Generating quiz..."):
-                raw = gemini_text(prompt, json_mode=True)
+                raw = generate_ai_text(prompt, json_mode=True)
             quiz = safe_json(raw)
             try:
                 quiz = validate_quiz_payload(quiz, expected_count=count)
@@ -488,7 +482,49 @@ def render_profile() -> None:
             "course": course.strip(),
             "goals": goals.strip(),
         }
-        st.success("Profile saved to Azure Storage for this session link.")
+        st.success("Profile updated for this session.")
+
+    st.divider()
+    st.subheader("Saved data")
+    if get_storage_container() is not None:
+        st.caption(
+            "Azure Blob persistence is enabled. This page's sid URL parameter is a "
+            "bearer session link: anyone with the full link may access this session's "
+            "saved profile and progress. Do not share it."
+        )
+    else:
+        st.caption("Azure Blob persistence is not configured; data is available only in the active Streamlit session.")
+    if st.button("Delete saved progress for this session", type="secondary", use_container_width=True):
+        try:
+            delete_current_session_progress()
+        except Exception:
+            st.error("Saved progress could not be deleted from Azure Storage. No local session data was cleared.")
+        else:
+            st.rerun()
+
+
+def delete_current_session_progress() -> None:
+    """Delete this session's private blob and rotate its URL bearer token."""
+    container = get_storage_container()
+    if container is not None:
+        blob = container.get_blob_client(get_session_blob_name())
+        if blob.exists():
+            blob.delete_blob()
+
+    defaults = {
+        "study_history": [],
+        "quiz_history": [],
+        "quiz": None,
+        "answers": {},
+        "document_text": "",
+        "profile": {},
+    }
+    for key, value in defaults.items():
+        st.session_state[key] = value
+
+    st.query_params["sid"] = uuid.uuid4().hex
+    st.session_state["_progress_loaded"] = True
+    st.session_state["_progress_storage_error"] = False
 
 
 def render_sidebar() -> str:
@@ -505,7 +541,7 @@ def render_sidebar() -> str:
             st.caption(f"Model: {MODEL_NAME}")
         else:
             st.warning("OpenRouter API key not configured")
-            st.caption("Configure OPENROUTER_API_KEY in Azure app settings to enable AI features.")
+            st.caption("Configure OPENROUTER_API_KEY in app secrets to enable hosted AI features.")
     return page
 
 
@@ -528,6 +564,8 @@ def main() -> None:
     save_persistent_progress()
     if st.session_state.get("_progress_storage_error"):
         st.warning("Progress could not be synced to Azure Storage. Current-session progress is still available.")
+    elif st.session_state.get("_progress_storage_configured") is False:
+        st.info("Azure Blob persistence is not configured. Progress lasts only for this active Streamlit session.")
     st.divider()
     st.caption("AI Study Coach · Streamlit + OpenRouter")
 

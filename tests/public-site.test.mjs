@@ -161,14 +161,19 @@ test("deployment is self-contained and does not depend on third-party font or sc
   assert.doesNotMatch(js, /\bfetch\s*\(|\bXMLHttpRequest\b|gtag\s*\(|analytics/i);
 });
 
-test("privacy notice covers both separate editions and the data sent for AI actions", async () => {
+test("privacy notice separates browser, Anna, and Streamlit data flows", async () => {
   const html = await read("public/privacy.html");
+  const browserSection = html.split("<h2>Anna-native edition</h2>")[0];
   assert.match(html, /browser's local storage/);
-  assert.match(html, /processed in the browser using built-in rules/);
-  assert.match(html, /not sent to a server-side AI endpoint or external model provider/);
-  assert.match(html, /Do not store passwords, government identifiers, personally identifying records, or confidential material/);
-  assert.doesNotMatch(html, /OpenRouter|Google Gemini|third-party model provider/);
+  assert.match(browserSection, /processed in the browser using built-in rules/);
+  assert.match(browserSection, /not sent to a server-side AI endpoint or external model provider/);
+  assert.match(browserSection, /Do not store passwords, government identifiers, personally identifying records, or confidential material/);
+  assert.doesNotMatch(browserSection, /OpenRouter|Google Gemini|third-party model provider/);
   assert.match(html, /Anna's hosted LLM/);
+  assert.match(html, /<h2>Streamlit edition<\/h2>/);
+  assert.match(html, /sent to OpenRouter only when you request a hosted AI action/);
+  assert.match(html, /bearer session link/);
+  assert.match(html, /Delete saved progress/);
   assert.match(html, /GitHub issue tracker/);
   assert.match(html, /href="\/app\/">Launch the web app/);
 });

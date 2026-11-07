@@ -25,3 +25,6 @@ jobs:
 
       - name: Compile Streamlit entrypoint
         run: python -m py_compile streamlit_app.py src/frontend/app.py
+
+      - name: Run Python tests
+        run: python -m pytest tests/ -q
