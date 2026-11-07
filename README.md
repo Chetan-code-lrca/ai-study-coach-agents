@@ -157,7 +157,9 @@ Study-plan generation, document summaries and explanations, document Q&A, and qu
 
 ## Data handling
 
-The maintained frontend stores the active profile, study-plan history, quiz history, current quiz, answers, and document text in Streamlit session state. There is no database or cross-device account system in this version.
+The maintained frontend keeps the active profile, study-plan history, quiz history, current quiz, answers, and document text in Streamlit session state. If `AZURE_STORAGE_ACCOUNT_URL` is configured, it additionally persists the profile, study-plan history, and quiz history to the `studycoach-data` Azure Blob container using `DefaultAzureCredential`; without that setting, no Azure Blob persistence is attempted. Document text, the current quiz, and in-progress answers are not included in the persisted blob payload.
+
+The optional persistence uses a generated 32-character `sid` in the Streamlit page URL as a per-browser-session identifier. It is not an authenticated account system: treat URLs containing `sid` as private and do not share them. Anyone who obtains a valid session URL may be able to access that session's persisted study history/profile through the app. The Streamlit app has no user sign-in or account recovery.
 
 The repository also contains an older `src/main.py` implementation with its own local `.study_coach_data` directory and older Gemini/agent code. That version is separate from the current `streamlit_app.py` path.
 
@@ -196,11 +198,11 @@ The `src/agents/` and `src/services/` modules are earlier parts of the project. 
 
 ## Current limitations
 
-- profile, plan history, quiz history, and document text are session-based in the browser/Streamlit edition;
+- the Vercel browser edition keeps its data in browser localStorage; the Streamlit edition keeps active state in Streamlit session state and can optionally persist profile/study/quiz history to Azure Blob Storage;
 - there is no account system or cloud synchronization;
 - uploaded documents are processed as text rather than stored in a document database;
 - the Vercel browser app runs key-free offline study tools; generated content is extractive or rule-based rather than full LLM output;
-- the Streamlit edition and older agent/service modules still use Gemini and require a valid Google API key;
+- the maintained Streamlit edition uses OpenRouter and requires `OPENROUTER_API_KEY`; older agent/service modules may use Google Gemini and require `GOOGLE_API_KEY`;
 - the older agent/service modules use a different implementation from the maintained Streamlit frontend.
 
 ## License
