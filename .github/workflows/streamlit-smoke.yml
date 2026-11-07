@@ -23,5 +23,8 @@ jobs:
       - name: Install deployment dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Compile Streamlit entrypoint
-        run: python -m py_compile streamlit_app.py src/frontend/app.py
+      - name: Compile Streamlit entrypoint and document helpers
+        run: python -m py_compile streamlit_app.py src/frontend/app.py src/services/document_limits.py
+
+      - name: Run document and quiz validation tests
+        run: python -m pytest -q tests/test_document_limits.py tests/test_quiz_validation.py
