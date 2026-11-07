@@ -27,7 +27,7 @@
     <div class="container" style="max-width: 820px">
       <p class="eyebrow">PRIVACY</p>
       <h1 style="font-size:clamp(38px,5vw,58px)">Your study material and data</h1>
-      <p>This notice describes how the browser-based and Anna-native AI Study Coach editions handle information. These editions are separate and do not automatically share saved history.</p>
+      <p>This notice describes how the browser-based, Anna-native, and Streamlit AI Study Coach editions handle information. These editions are separate and do not automatically share saved history.</p>
       <h2>Browser-based edition</h2>
       <ul>
         <li>Your profile, saved note history, generated plans, and quiz history are stored in this browser's local storage. They do not automatically sync to Anna, another browser, or another device. Anyone who can use the same browser profile may be able to access that local data.</li>
@@ -42,11 +42,19 @@
         <li>Study profile and activity are saved through Anna's app Storage host API, and AI actions use Anna's hosted LLM. Data handling is also subject to Anna's platform terms and privacy notices.</li>
         <li>Text extracted from local study files is sent to Anna only when you request an AI action; the app does not upload the original file bytes for local text extraction.</li>
       </ul>
+      <h2>Streamlit edition</h2>
+      <ul>
+        <li>Study-plan prompts, quiz prompts, questions, and selected source text are sent to OpenRouter only when you request a hosted AI action. Uploaded documents are extracted locally; the original file bytes are not sent as attachments.</li>
+        <li>Uploaded files are limited to 10 MiB, PDFs to 100 pages, and extracted or pasted text to 50,000 characters. These limits reduce resource use but do not replace malware scanning.</li>
+        <li>When Azure Blob persistence is configured, study history, quiz history, and profile summaries are stored in the configured private studycoach-data container. Active document text, the current quiz, and answers are not included in that saved blob.</li>
+        <li>A random session identifier is carried in the page URL and identifies the saved blob. Treat the full URL as a bearer session link: anyone who obtains it may access that session's saved summaries. The Streamlit edition does not provide user accounts or identity-based access control.</li>
+        <li>The Profile page provides a Delete saved progress action. It deletes the current session's blob when Azure storage is configured and rotates the session identifier. Without Azure Blob persistence, progress remains only in the active Streamlit session.</li>
+      </ul>
       <h2>Retention and control</h2>
       <p>In the browser edition, you can clear this site's browser storage using your browser's site-data controls. Doing so permanently removes the locally saved profile, notes, plans, and quizzes from that browser. In the Anna-native edition, manage your app data through the Anna app experience and platform controls.</p>
       <h2>Contact and project support</h2>
       <p>For questions, feature requests, or to report an issue, use the <a href="https://github.com/Chetan-code-lrca/ai-study-coach-agents/issues" rel="noreferrer">AI Study Coach GitHub issue tracker</a>. Do not include private study notes or API keys in public issues.</p>
-      <p class="empty-state">Last updated: 21 October 2026.</p>
+      <p class="empty-state">Last updated: 7 November 2026.</p>
     </div>
   </main>
   <footer class="site-footer">
