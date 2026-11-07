@@ -346,7 +346,7 @@ def render_document_learning() -> None:
         if st.button("Summarize", use_container_width=True):
             try:
                 with st.spinner("Summarizing..."):
-                    result = gemini_text(
+                    result = openrouter_text(
                         "Summarize the following study material. Provide a clear overview, "
                         "key concepts, important definitions, and a short revision checklist.\n\n"
                         + text[:50000]
@@ -359,7 +359,7 @@ def render_document_learning() -> None:
         if st.button("Explain Key Concepts", use_container_width=True):
             try:
                 with st.spinner("Explaining the concepts..."):
-                    result = gemini_text(
+                    result = openrouter_text(
                         "Identify and explain the most important concepts in the following "
                         "study material in beginner-friendly language, using small examples.\n\n"
                         + text[:50000]
@@ -375,7 +375,7 @@ def render_document_learning() -> None:
         else:
             try:
                 with st.spinner("Finding the answer..."):
-                    answer = gemini_text(
+                    answer = openrouter_text(
                         "Answer the question using only the supplied study material. "
                         "If the material does not contain enough information, say so clearly.\n\n"
                         f"MATERIAL:\n{text[:50000]}\n\nQUESTION:\n{question}"
@@ -426,7 +426,7 @@ Return ONLY JSON in this shape:
 """
         try:
             with st.spinner("Generating quiz..."):
-                raw = gemini_text(prompt, json_mode=True)
+                raw = openrouter_text(prompt, json_mode=True)
             quiz = safe_json(raw)
             try:
                 quiz = validate_quiz_payload(quiz, expected_count=count)
