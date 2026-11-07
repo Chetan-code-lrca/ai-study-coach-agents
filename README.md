@@ -11,7 +11,7 @@ The repository also contains older agent and service code from earlier versions 
 This repository contains three related application surfaces:
 
 - **Vercel browser app:** the public site lives at [ai-study-coach-agents.vercel.app](https://ai-study-coach-agents.vercel.app/). The **Launch the web app** links open the actual study workspace at `/app/`, built from the reviewed Anna UI. The browser edition uses localStorage for profile, notes, plans, and quiz history; those records remain in that browser and do not sync automatically to Anna or other devices.
-- **Vercel browser app:** study planning, note summaries, concept explanations, note-grounded answers, and quizzes use built-in rule-based/extractive tools in the browser. The browser edition does not call `/api/study`, send prompts to external model providers, or require an AI API key. It is reliable and key-free, but less flexible than a hosted language model. Profile, notes, plans, and quiz history stay in that browser's local storage and do not automatically sync to Anna or other devices.
+- **Browser capabilities:** study planning, note summaries, concept explanations, note-grounded answers, and quizzes use built-in rule-based/extractive tools in the browser. The browser edition does not call `/api/study`, send prompts to external model providers, or require an AI API key. Profile, notes, plans, and quiz history stay in that browser's local storage and do not automatically sync to Anna or other devices.
 - **Anna-native app:** `anna-app/` is the separate Anna-runtime edition. It uses Anna's LLM and Storage host APIs and does not need the Vercel Gemini key.
 - **Streamlit edition:** `streamlit_app.py` remains an alternative Python-hosted implementation for Streamlit Community Cloud. Set `GOOGLE_API_KEY` in that service's secrets as well. Its session state is independent of both the Vercel browser app and the Anna-native app.
 
@@ -75,7 +75,7 @@ Save a small student profile for the current session.
 
 - Python 3.11 or newer
 - pip
-- A Google Gemini API key for the AI features
+- An OpenRouter API key for hosted AI features in the Streamlit edition
 
 ## Run locally
 
@@ -109,18 +109,18 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Set the Gemini API key before starting the app.
+Set the OpenRouter API key before starting the Streamlit app.
 
 Linux/macOS:
 
 ```bash
-export GOOGLE_API_KEY="your-gemini-api-key"
+export OPENROUTER_API_KEY="your-openrouter-api-key"
 ```
 
 Windows PowerShell:
 
 ```powershell
-$env:GOOGLE_API_KEY = "your-gemini-api-key"
+$env:OPENROUTER_API_KEY = "your-openrouter-api-key"
 ```
 
 Start Streamlit:
@@ -144,20 +144,20 @@ Main file: streamlit_app.py
 Add the Gemini key to the app secrets:
 
 ```toml
-GOOGLE_API_KEY = "your-gemini-api-key"
+OPENROUTER_API_KEY = "your-openrouter-api-key"
 ```
 
 Do not put the real key in the repository.
 
-## Gemini integration
+## OpenRouter integration
 
-The maintained Streamlit frontend uses Google's `google-genai` Python SDK and the model configured as `gemini-3.8-flash`.
+The maintained Streamlit frontend sends prompts to OpenRouter's chat-completions API using the `openrouter/free` model route. That route may select different free models over time and can be subject to provider availability, rate limits, and context limits.
 
-The Gemini call is used for study-plan generation, document summaries and explanations, document Q&A, and quiz generation. PDF and DOCX files are converted to text locally with `pypdf` and `python-docx` before an AI request is made.
+OpenRouter is used for study-plan generation, document summaries and explanations, document Q&A, and quiz generation. Uploaded files are parsed locally; only the extracted/pasted text included in a requested AI action is sent to OpenRouter. The original uploaded file bytes are not sent.
 
 ## Data handling
 
-The maintained frontend stores the active profile, study-plan history, quiz history, current quiz, answers, and document text in Streamlit session state. There is no database or cross-device account system in this version.
+The Streamlit frontend keeps the active document text, current quiz, and answers in Streamlit session state. If AZURE_STORAGE_ACCOUNT_URL is configured and the app identity can access the private studycoach-data container, study history, quiz history, and profile summaries are also stored in Azure Blob Storage under a random 128-bit session ID in the page URL. The full URL is therefore a bearer session link: anyone who obtains it can access that session's saved summaries. Do not share it. The Profile page includes a delete-saved-progress action that removes the current session blob and rotates the session ID. Without Azure Blob configuration, progress lasts only for the active Streamlit session. There is no account system or cross-device identity management.
 
 The repository also contains an older `src/main.py` implementation with its own local `.study_coach_data` directory and older Gemini/agent code. That version is separate from the current `streamlit_app.py` path.
 
@@ -198,7 +198,7 @@ The `src/agents/` and `src/services/` modules are earlier parts of the project. 
 
 - profile, plan history, quiz history, and document text are session-based in the browser/Streamlit edition;
 - there is no account system or cloud synchronization;
-- uploaded documents are processed as text rather than stored in a document database;
+- uploaded documents are processed as text rather than stored in a document database; the Streamlit edition limits uploads and extracted text but does not provide malware scanning;
 - the Vercel browser app runs key-free offline study tools; generated content is extractive or rule-based rather than full LLM output;
 - the Streamlit edition and older agent/service modules still use Gemini and require a valid Google API key;
 - the older agent/service modules use a different implementation from the maintained Streamlit frontend.
