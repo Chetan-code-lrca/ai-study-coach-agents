@@ -12,7 +12,7 @@ This repository contains three related application surfaces:
 
 - **Vercel browser app:** the public site lives at [ai-study-coach-agents.vercel.app](https://ai-study-coach-agents.vercel.app/). The **Launch the web app** links open the actual study workspace at `/app/`, built from the reviewed Anna UI. The browser edition uses localStorage for profile, notes, plans, and quiz history; those records remain in that browser and do not sync automatically to Anna or other devices.
 - **Vercel browser app:** study planning, note summaries, concept explanations, note-grounded answers, and quizzes use built-in rule-based/extractive tools in the browser. The browser edition does not call `/api/study`, send prompts to external model providers, or require an AI API key. It is reliable and key-free, but less flexible than a hosted language model. Profile, notes, plans, and quiz history stay in that browser's local storage and do not automatically sync to Anna or other devices.
-- **Anna-native app:** `anna-app/` is the separate Anna-runtime edition. It uses Anna's LLM and Storage host APIs and does not need the Vercel Gemini key.
+- **Anna-native app:** `anna-app/` is the separate Anna-runtime edition. It uses Anna's LLM and Storage host APIs and does not need a Vercel AI API key.
 - **Streamlit edition:** `streamlit_app.py` remains an alternative Python-hosted implementation for Streamlit Community Cloud. Set `OPENROUTER_API_KEY` in that service's secrets. Its session state is independent of both the Vercel browser app and the Anna-native app.
 
 Vercel serves the static landing page and browser app. The retired `/api/study` endpoint returns `410 Gone`; the browser edition has no external AI proxy. Vercel does not run a persistent Streamlit server.
@@ -141,7 +141,7 @@ Branch: main
 Main file: streamlit_app.py
 ```
 
-Add the Gemini key to the app secrets:
+Add the OpenRouter key to the app secrets:
 
 ```toml
 OPENROUTER_API_KEY = "your-openrouter-api-key"
