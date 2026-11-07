@@ -96,6 +96,7 @@ def generate_ai_text(prompt: str, *, json_mode: bool = False) -> str:
 
 
 
+@st.cache_resource
 def get_storage_container():
     """Return the private Azure Blob container when configured."""
     account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL", "").strip()
@@ -149,7 +150,9 @@ def save_persistent_progress() -> None:
     """Persist non-sensitive study/quiz summaries to private Blob Storage."""
     container = get_storage_container()
     if container is None:
+        st.session_state["_progress_storage_configured"] = False
         return
+    st.session_state["_progress_storage_configured"] = True
     try:
         payload = {
             "study_history": st.session_state.get("study_history", []),
@@ -274,6 +277,7 @@ def render_document_learning() -> None:
         "Or paste study material",
         value=st.session_state.document_text,
         height=220,
+        max_chars=MAX_DOCUMENT_CHARS,
     )
 
     if uploaded is not None:
@@ -480,6 +484,48 @@ def render_profile() -> None:
         }
         st.success("Profile updated for this session.")
 
+    st.divider()
+    st.subheader("Saved data")
+    if get_storage_container() is not None:
+        st.caption(
+            "Azure Blob persistence is enabled. This page's sid URL parameter is a "
+            "bearer session link: anyone with the full link may access this session's "
+            "saved profile and progress. Do not share it."
+        )
+    else:
+        st.caption("Azure Blob persistence is not configured; data is available only in the active Streamlit session.")
+    if st.button("Delete saved progress for this session", type="secondary", use_container_width=True):
+        try:
+            delete_current_session_progress()
+        except Exception:
+            st.error("Saved progress could not be deleted from Azure Storage. No local session data was cleared.")
+        else:
+            st.rerun()
+
+
+def delete_current_session_progress() -> None:
+    """Delete this session's private blob and rotate its URL bearer token."""
+    container = get_storage_container()
+    if container is not None:
+        blob = container.get_blob_client(get_session_blob_name())
+        if blob.exists():
+            blob.delete_blob()
+
+    defaults = {
+        "study_history": [],
+        "quiz_history": [],
+        "quiz": None,
+        "answers": {},
+        "document_text": "",
+        "profile": {},
+    }
+    for key, value in defaults.items():
+        st.session_state[key] = value
+
+    st.query_params["sid"] = uuid.uuid4().hex
+    st.session_state["_progress_loaded"] = True
+    st.session_state["_progress_storage_error"] = False
+
 
 def render_sidebar() -> str:
     with st.sidebar:
@@ -495,7 +541,7 @@ def render_sidebar() -> str:
             st.caption(f"Model: {MODEL_NAME}")
         else:
             st.warning("OpenRouter API key not configured")
-            st.caption("Configure OPENROUTER_API_KEY in Azure app settings to enable AI features.")
+            st.caption("Configure OPENROUTER_API_KEY in app secrets to enable hosted AI features.")
     return page
 
 
@@ -518,6 +564,8 @@ def main() -> None:
     save_persistent_progress()
     if st.session_state.get("_progress_storage_error"):
         st.warning("Progress could not be synced to Azure Storage. Current-session progress is still available.")
+    elif st.session_state.get("_progress_storage_configured") is False:
+        st.info("Azure Blob persistence is not configured. Progress lasts only for this active Streamlit session.")
     st.divider()
     st.caption("AI Study Coach · Streamlit + OpenRouter")
 
