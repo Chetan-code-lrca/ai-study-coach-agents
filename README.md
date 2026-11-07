@@ -163,7 +163,7 @@ PDF and DOCX files are converted to text locally first. Uploaded files are limit
 
 The Streamlit app keeps the active quiz, answers, document text, and current interaction state in Streamlit session state. When AZURE_STORAGE_ACCOUNT_URL is configured and the app identity can access the private studycoach-data container, it also stores study history, quiz history, and the profile in Azure Blob Storage. Without that configuration, progress is session-only.
 
-Persistent records are keyed by a 32-character session ID in the sid query parameter. Treat the complete app URL as private: someone who obtains the same session link may be able to access the associated saved progress while storage is enabled. This is not a user-account or role-based access system. Configure a retention and deletion policy for the storage container before using it with an organization.
+Persistent records are keyed by a 32-character session ID in the sid query parameter. Treat the complete app URL as private: someone who obtains the same session link may be able to access the associated saved progress while storage is enabled. This is not a user-account or role-based access system. The Profile page provides a Delete saved progress action that deletes the current session blob and rotates the session ID. Configure a retention policy for the storage container before using it with an organization.
 
 The repository also contains older agent/service code, including Gemini integrations. Those modules are separate from the maintained streamlit_app.py path.
 
