@@ -546,6 +546,8 @@ def render_profile() -> None:
             delete_current_session_progress()
         except Exception:
             st.error("Saved progress could not be deleted from Azure Storage. No local session data was cleared.")
+        else:
+            st.rerun()
 
 
 def delete_current_session_progress() -> None:
@@ -570,7 +572,6 @@ def delete_current_session_progress() -> None:
     st.query_params["sid"] = uuid.uuid4().hex
     st.session_state["_progress_loaded"] = True
     st.session_state["_progress_storage_error"] = False
-    st.rerun()
 
 
 def render_sidebar() -> str:
