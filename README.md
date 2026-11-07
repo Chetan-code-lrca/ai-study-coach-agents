@@ -141,7 +141,7 @@ Branch: main
 Main file: streamlit_app.py
 ```
 
-Add the Gemini key to the app secrets:
+Add the OpenRouter key to the app secrets:
 
 ```toml
 OPENROUTER_API_KEY = "your-openrouter-api-key"
@@ -200,7 +200,7 @@ The `src/agents/` and `src/services/` modules are earlier parts of the project. 
 - there is no account system or cloud synchronization;
 - uploaded documents are processed as text rather than stored in a document database; the Streamlit edition limits uploads and extracted text but does not provide malware scanning;
 - the Vercel browser app runs key-free offline study tools; generated content is extractive or rule-based rather than full LLM output;
-- the Streamlit edition and older agent/service modules still use Gemini and require a valid Google API key;
+- the Streamlit edition uses OpenRouter and requires OPENROUTER_API_KEY for hosted AI actions; older agent/service modules are separate and may use other provider settings;
 - the older agent/service modules use a different implementation from the maintained Streamlit frontend.
 
 ## License
